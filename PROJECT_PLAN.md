@@ -1,5 +1,24 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
+## Active Work — User-directed Headquarters Prototype (2026-09-22)
+
+The latest explicit request advances work beyond the former Phase 1 boundary: first-person headquarters/preparation movement, elevated third-person battles, the headquarters UI and a connected mission flow. This scoped prototype is now active. The historical phase gates below remain; this does not mark Phase 2 or Phase 3 complete.
+
+Implemented and exercised in the embedded browser:
+
+- [x] Single-renderer headquarters → separate briefing room → battle → headquarters lifecycle.
+- [x] First-person WASD/arrow/drag movement with collision and touch movement controls.
+- [x] Major stations accessible through on-screen controls; original procedural 3D headquarters and map table.
+- [x] Two maps, Survival/Challenge rules, immutable deployment selection and editable three-slot loadout.
+- [x] Two tower definitions, owned/locked inventory, purchases, model rotation and cosmetic finishes.
+- [x] Local profile, mission rewards, login rewards, daily/weekly quests, starter progression track, code redemption, cosmetic crates and wheel tickets.
+- [x] Original carrier boss, victory trophy, hidden service log, index and per-map records.
+- [x] Legacy checks and new profile/scene integration checks pass (28 total).
+- [ ] Native Chrome/Edge/Firefox, physical multi-touch and genuine hidden-tab/resume verification.
+- [ ] Full multi-wave campaign, additional modes, evolved towers/combat upgrades, full shop catalog and story-driven headquarters expansion.
+
+The game explicitly labels unavailable catalog content. `README.md` describes the delivered prototype and limitations; `tests/EVIDENCE.md` records the actual verification.
+
 ## Source Analysis
 
 The brainstorm contains five connected products that must be built in sequence:
@@ -54,16 +73,18 @@ Prove the smallest fully 3D interaction loop: inspect one arena, place one tower
 
 ### Phase 1 Acceptance Gate
 
-- [ ] Loads from a basic static HTTP server with no install/build step and no console errors.
-- [ ] All world elements and interactions are 3D; DOM is HUD/menu only.
-- [ ] Preview follows the pointer and communicates valid/invalid placement beyond color alone.
-- [ ] Placement rejects road, outside bounds, overlap, and insufficient cash; success deducts cost once.
-- [ ] Exactly 10 enemies follow all waypoints at frame-rate-independent speed.
-- [ ] The tower picks the furthest-progress in-range living enemy and visibly damages/kills it.
-- [ ] Cash, base health, enemy count, and state remain accurate.
-- [ ] A defended run can reach `WON`; an undefended run can reach `LOST`.
-- [ ] Restart restores the initial battle without page refresh, duplicate loops/listeners, or leftover meshes.
-- [ ] Resize and hidden-tab behavior are safe.
+- [x] Loads from a basic static HTTP server with no install/build step and no console errors.
+- [x] All world elements and interactions are 3D; DOM is HUD/menu only.
+- [x] Preview follows the pointer and communicates valid/invalid placement beyond color alone.
+- [x] Placement rejects road, outside bounds, overlap, and insufficient cash; success deducts cost once.
+- [x] Exactly 10 enemies follow all waypoints at frame-rate-independent speed.
+- [x] The tower picks the furthest-progress in-range living enemy and visibly damages/kills it.
+- [x] Cash, base health, enemy count, and state remain accurate.
+- [x] A defended run can reach `WON`; an undefended run can reach `LOST`.
+- [x] Restart restores the initial battle without page refresh, duplicate loops/listeners, or leftover meshes.
+- [ ] Resize and hidden-tab behavior are safe. Resize and controlled visibility-event checks pass; native hidden/resume manual verification remains pending.
+
+Verification: `tests/EVIDENCE.md` records 12/12 logic checks, 5/5 lifecycle checks, live win/loss and three restart cycles. The native visibility check remains open; the user-directed headquarters prototype above now defines active work.
 
 ### Not in Phase 1
 

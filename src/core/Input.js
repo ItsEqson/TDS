@@ -1,0 +1,68 @@
+export const INPUT_MAP=Object.freeze({
+  cancel:'Escape',start:'Space',restart:'KeyR',place:0,cancelPointer:2,interact:'KeyE',
+  walk:Object.freeze({forward:['KeyW'],back:['KeyS'],left:['KeyA'],right:['KeyD'],turnLeft:['ArrowLeft'],turnRight:['ArrowRight'],lookUp:['ArrowUp'],lookDown:['ArrowDown']})
+});
+export class Input {
+  constructor(canvas,scene){
+    this.canvas=canvas;
+    this.scene=scene;
+    this.onMove=this.onMove.bind(this);
+    this.onDown=this.onDown.bind(this);
+    this.onLeave=this.onLeave.bind(this);
+    this.onKey=this.onKey.bind(this);
+    this.onContext=this.onContext.bind(this);
+    canvas.addEventListener('pointermove',this.onMove);
+    canvas.addEventListener('pointerdown',this.onDown);
+    canvas.addEventListener('pointerleave',this.onLeave);
+    canvas.addEventListener('keydown',this.onKey);
+    canvas.addEventListener('contextmenu',this.onContext);
+  }
+  onMove(e){
+    this.scene.point(e.clientX,e.clientY);
+  }
+  onDown(e){
+    this.canvas.focus({
+      preventScroll:true
+    });
+    if(e.button===INPUT_MAP.cancelPointer){
+      if(this.scene.placing){
+        e.preventDefault();
+        this.scene.cancel();
+        this.scene.cancelledContext=true;
+      }
+      return;
+    }
+    if(e.button===INPUT_MAP.place){
+      this.scene.point(e.clientX,e.clientY);
+      this.scene.click();
+    }
+  }
+  onLeave(){
+    this.scene.pointerOutside();
+  }
+  onKey(e){
+    if(document.activeElement!==this.canvas||e.ctrlKey||e.metaKey||e.altKey)return;
+    let action=null;
+    if(e.code===INPUT_MAP.cancel&&this.scene.canCancel())action='cancel';
+    if(e.code===INPUT_MAP.start&&this.scene.battle.state==='PREP')action='start';
+    if(e.code===INPUT_MAP.restart&&this.scene.terminal)action='restart';
+    if(action){
+      e.preventDefault();
+      if(!e.repeat)this.scene[action]();
+    }
+  }
+  onContext(e){
+    if(this.scene.placing||this.scene.cancelledContext){
+      e.preventDefault();
+      this.scene.cancelledContext=false;
+    }
+  }
+  dispose(){
+    const c=this.canvas;
+    c.removeEventListener('pointermove',this.onMove);
+    c.removeEventListener('pointerdown',this.onDown);
+    c.removeEventListener('pointerleave',this.onLeave);
+    c.removeEventListener('keydown',this.onKey);
+    c.removeEventListener('contextmenu',this.onContext);
+  }
+}

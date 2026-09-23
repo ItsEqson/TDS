@@ -1,0 +1,270 @@
+import * as THREE from 'three';
+import { WaveManager } from '../gameplay/WaveManager.js';
+import { placementReason } from '../gameplay/Placement.js';
+import { isTerminal } from '../core/State.js';
+import { Input } from '../core/Input.js';
+import { Hud } from '../ui/Hud.js';
+import { TOWER,TOWERS } from '../data/towers.js';
+import { SKINS,OPERATION } from '../data/headquarters.js';
+import { ENEMY } from '../data/enemies.js';
+import { createWorld } from '../rendering/createWorld.js';
+import { createTowerMesh,createEnemyMesh,createRange,createBeam,disposeObject } from '../rendering/createMeshes.js';
+export class BattleScene {
+  constructor(canvas,app=null,mission=null){
+    this.canvas=canvas;
+    this.app=app;this.mission=mission;this.towerId=mission?.loadout.find(Boolean)||'prism-sentry';this.rewarded=false;this.intro=mission&&!app?.reducedMotion?OPERATION.flyoverSeconds:0;
+    this.battle=new WaveManager(mission);
+    this.placing=false;
+    this.selected=null;
+    this.message='Place a sentry near the inner bend, then start the wave.';
+    this.pointer=new THREE.Vector2();
+    this.raycaster=new THREE.Raycaster();
+    this.hits=[];
+    this.towerMeshes=new Map();
+    this.enemyMeshes=new Map();
+    this.direction=new THREE.Vector3();
+    this.up=new THREE.Vector3(0,1,0);
+    this.hasPoint=false;
+  }
+  init(){
+    this.scene=new THREE.Scene();
+    this.scene.background=new THREE.Color(0x182d35);
+    this.camera=new THREE.PerspectiveCamera(40,1,.1,250);
+    const {
+      terrain
+    }
+    =createWorld(this.scene,this.mission?.mapData);
+    this.terrain=terrain;
+    this.ghost=createTowerMesh(true);
+    this.ghost.visible=false;
+    this.scene.add(this.ghost);
+    this.range=createRange();
+    this.scene.add(this.range);
+    this.scene.updateMatrixWorld(true);
+  }
+  enter(){
+    this.input=new Input(this.canvas,this);
+    this.hud=new Hud(this);
+    this.hud.update();
+  }
+  get terminal(){
+    return isTerminal(this.battle.state);
+  }
+  place(){
+    if(this.terminal)return;
+    this.placing=true;
+    this.selected=null;
+    this.message='Move over terrain. ✓ Place here / × cannot place. Esc cancels.';
+    this.refreshPreview();
+    this.hud.update();
+  }
+  canCancel(){
+    return this.placing||this.selected!==null;
+  }
+  cancel(){
+    this.placing=false;
+    this.selected=null;
+    this.ghost.visible=false;
+    this.range.visible=false;
+    this.message='Selection cleared. No cash spent.';
+    this.hud.update();
+  }
+  start(){
+    if(this.intro>0)return;
+    if(this.battle.start()){
+      this.message='Wave active. Sentries target the furthest enemy in range.';
+      this.hud.update();
+    }
+  }
+  restart(){
+    if(this.app){this.app.go('battle');return;}
+    if(!this.battle.restart())return;
+    this.clearEntities();
+    this.placing=false;
+    this.selected=null;
+    this.hasPoint=false;
+    this.ghost.visible=false;
+    this.range.visible=false;
+    this.message='Fresh field. Place a sentry, then start the wave.';
+    this.hud.update();
+  }
+  clearEntities(){
+    for(const {
+      model,beam
+    }
+    of this.towerMeshes.values()){
+      disposeObject(model);
+      disposeObject(beam);
+    }
+    for(const m of this.enemyMeshes.values())disposeObject(m);
+    this.towerMeshes.clear();
+    this.enemyMeshes.clear();
+  }
+  point(clientX,clientY){
+    if(this.intro>0)return;
+    const r=this.canvas.getBoundingClientRect();
+    this.pointer.set((clientX-r.left)/r.width*2-1,-(clientY-r.top)/r.height*2+1);
+    this.raycaster.setFromCamera(this.pointer,this.camera);
+    this.hits.length=0;
+    this.raycaster.intersectObject(this.terrain,false,this.hits);
+    this.hasPoint=this.hits.length>0;
+    if(this.hasPoint){
+      this.x=this.hits[0].point.x;
+      this.z=this.hits[0].point.z;
+    }
+    this.refreshPreview();
+  }
+  pointerOutside(){
+    this.hasPoint=false;
+    this.refreshPreview();
+  }
+  refreshPreview(){
+    if(!this.placing)return;
+    this.ghost.visible=this.hasPoint;
+    this.range.visible=this.hasPoint;
+    const definition=TOWERS[this.towerId];
+    this.range.scale.setScalar(definition.range/TOWER.range);
+    let reason=this.hasPoint?placementReason(this.x,this.z,this.battle.towers,this.battle.cash,definition,this.battle.segments):'Outside arena';
+    this.message=reason?'× '+reason:'✓ Place here · '+definition.cost+' cash';
+    if(this.hasPoint){
+      this.ghost.position.set(this.x,0,this.z);
+      this.range.position.set(this.x,.24,this.z);
+      const color=reason?0xfa8571:0x9ef6c7;
+      this.ghost.traverse(o=>{
+        if(o.material)o.material.color.setHex(color);
+      });
+      this.range.material.color.setHex(color);
+    }
+    this.hud?.update();
+  }
+  click(){
+    if(this.terminal||this.intro>0)return;
+    if(this.placing){
+      if(!this.hasPoint)return;
+      const result=this.battle.place(this.x,this.z,this.towerId);
+      if(result.ok){
+        const model=createTowerMesh(),beam=createBeam();
+        if(this.towerId==='longwatch')model.scale.set(.85,1.4,.85);
+        if(this.mission)model.traverse(o=>{if(o.geometry?.type==='OctahedronGeometry')o.material.color.setHex(SKINS[this.mission.skin].color);});
+        model.position.set(result.tower.x,0,result.tower.z);
+        model.userData.towerId=result.tower.id;
+        this.scene.add(model,beam);
+        model.updateMatrixWorld(true);
+        this.towerMeshes.set(result.tower.id,{
+          model,beam
+        });
+        this.placing=false;
+        this.ghost.visible=false;
+        this.selected=result.tower;
+        this.message=TOWERS[this.towerId].name+' placed. Click another slot to build more.';
+        this.showSelection();
+      }
+      else this.message='× '+result.reason;
+      this.hud.update();
+      return;
+    }
+    this.hits.length=0;
+    for(const {
+      model
+    }
+    of this.towerMeshes.values())this.raycaster.intersectObject(model,true,this.hits);
+    this.hits.sort((a,b)=>a.distance-b.distance);
+    if(this.hits.length){
+      let root=this.hits[0].object;
+      while(!root.userData.towerId&&root.parent)root=root.parent;
+      this.selected=this.battle.towers.find(t=>t.id===root.userData.towerId);
+      const d=this.selected.definition;this.message=(d.name||'Prism sentry')+' · '+d.damage+' damage · '+d.range+' range';
+    }
+    else this.selected=null;
+    this.showSelection();
+    this.hud.update();
+  }
+  showSelection(){
+    this.range.visible=!!this.selected;
+    if(this.selected){
+      this.range.scale.setScalar(this.selected.definition.range/TOWER.range);
+      this.range.position.set(this.selected.x,.24,this.selected.z);
+      this.range.material.color.setHex(0xb8f2cb);
+    }
+  }
+  update(dt){
+    if(this.intro>0){this.intro=Math.max(0,this.intro-dt);this.message='Deployment flyover · tracing the approach to the relay';if(!this.intro)this.message='Commander: Ground swarm inbound. Stop the Bastion carrier before it reaches the relay.';this.hud.update();return;}
+    const before=this.battle.state;
+    this.battle.update(dt);
+    if(before!==this.battle.state&&this.terminal){
+      this.placing=false;
+      this.ghost.visible=false;
+      this.range.visible=false;
+      this.message=this.battle.state==='WON'?'Route secured. Press R or Restart to play again.':'Base breached. Press R or Restart to try a defense.';
+      if(this.app&&!this.rewarded){this.rewarded=true;const reward=this.app.store.complete(this.battle,this.mission);this.message+=` +${reward} account coins. Return to headquarters to collect rewards.`;}
+    }
+    this.hud.update();
+  }
+  render(renderer,alpha){
+    if(this.restCamera){this.camera.position.copy(this.restCamera);if(this.intro>0){const t=this.intro/OPERATION.flyoverSeconds;this.camera.position.x+=Math.sin(t*Math.PI)*8;this.camera.position.y+=t*4;}this.camera.lookAt(0,.5,0);}
+    for(const e of this.battle.enemies){
+      let model=this.enemyMeshes.get(e.id);
+      if(!model){
+        model=createEnemyMesh();
+        this.scene.add(model);
+        this.enemyMeshes.set(e.id,model);
+      }
+      model.position.set(e.previousX+(e.x-e.previousX)*alpha,0,e.previousZ+(e.z-e.previousZ)*alpha);
+      if(e.x!==e.previousX||e.z!==e.previousZ)model.rotation.y=Math.atan2(e.x-e.previousX,e.z-e.previousZ);
+      if(e.boss)model.scale.setScalar(1.7);
+      model.userData.health.scale.x=e.health/e.maxHealth;
+    }
+    for(const [id,model] of this.enemyMeshes){
+      if(!this.battle.enemies.some(e=>e.id===id)){
+        disposeObject(model);
+        this.enemyMeshes.delete(id);
+      }
+    }
+    for(const t of this.battle.towers){
+      const {
+        beam
+      }
+      =this.towerMeshes.get(t.id);
+      beam.visible=t.beamRemaining>0&&!this.terminal;
+      if(beam.visible){
+        this.direction.set(t.targetX-t.x,.75-1.7,t.targetZ-t.z);
+        const length=this.direction.length();
+        beam.position.set((t.x+t.targetX)/2,1.225,(t.z+t.targetZ)/2);
+        beam.scale.y=length;
+        beam.quaternion.setFromUnitVectors(this.up,this.direction.divideScalar(length));
+      }
+    }
+    renderer.render(this.scene,this.camera);
+  }
+  resize(width,height){
+    this.camera.aspect=width/height;
+    this.camera.updateProjectionMatrix();
+    const corner=new THREE.Vector3();
+    for(let distance=28;distance<220;distance+=1){
+      this.camera.position.set(distance*.36,distance*.82,distance*.64);
+      this.camera.lookAt(0,.5,0);
+      this.camera.updateMatrixWorld();
+      let fits=true;
+      for(const x of [-14,14])for(const y of [-1.5,3])for(const z of [-10,10]){
+        corner.set(x,y,z).project(this.camera);
+        if(Math.abs(corner.x)>.91||Math.abs(corner.y)>.91)fits=false;
+      }
+      if(fits)break;
+    }
+    this.pointerOutside();
+    this.restCamera=this.camera.position.clone();
+  }
+  chooseTower(id){if(!this.mission?.loadout.includes(id))return;this.towerId=id;this.place();}
+  headquarters(){this.app?.go('hq');}
+  exit(){
+    this.input.dispose();
+    this.hud.dispose();
+  }
+  dispose(){
+    this.clearEntities();
+    disposeObject(this.scene);
+    this.scene.traverse(o=>{
+      if(o.shadow)o.shadow.dispose();
+    });
+  }
+}

@@ -1,0 +1,60 @@
+import { TIMING } from '../data/waves.js';
+export class Game {
+  constructor(renderer,scene,host){
+    this.renderer=renderer;
+    this.scene=scene;
+    this.host=host;
+    this.accumulator=0;
+    this.last=null;
+    this.running=false;
+    this.onFrame=this.onFrame.bind(this);
+    this.onResize=this.onResize.bind(this);
+    this.onVisibility=this.onVisibility.bind(this);
+  }
+  start(){
+    if(this.running)return;
+    this.running=true;
+    this.scene.init();
+    this.scene.enter();
+    this.resizeObserver=new ResizeObserver(this.onResize);
+    this.resizeObserver.observe(this.host);
+    document.addEventListener('visibilitychange',this.onVisibility);
+    this.onResize();
+    this.frame=requestAnimationFrame(this.onFrame);
+  }
+  onResize(){
+    const width=this.host.clientWidth,height=this.host.clientHeight;
+    if(!width||!height)return;
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio,TIMING.maxPixelRatio));
+    this.renderer.setSize(width,height,false);
+    this.scene.resize(width,height);
+  }
+  onVisibility(){
+    this.last=null;
+    this.accumulator=0;
+  }
+  onFrame(now){
+    if(!this.running)return;
+    const dt=this.last===null?0:Math.min((now-this.last)/1000,TIMING.maxFrameSeconds);
+    this.last=now;
+    if(!document.hidden){
+      this.accumulator+=dt;
+      while(this.accumulator+1e-10>=TIMING.stepSeconds){
+        this.scene.update(TIMING.stepSeconds);
+        this.accumulator=Math.max(0,this.accumulator-TIMING.stepSeconds);
+      }
+      this.scene.render(this.renderer,this.accumulator/TIMING.stepSeconds);
+    }
+    this.frame=requestAnimationFrame(this.onFrame);
+  }
+  dispose(){
+    this.running=false;
+    cancelAnimationFrame(this.frame);
+    document.removeEventListener('visibilitychange',this.onVisibility);
+    this.resizeObserver.disconnect();
+    this.scene.exit();
+    this.scene.dispose();
+    this.renderer.dispose();
+    this.renderer.domElement.remove();
+  }
+}
