@@ -1,4 +1,5 @@
 import { TOWER,TOWERS } from '../data/towers.js';
+import { portrait } from './art.js';
 import { WAVE } from '../data/waves.js';
 export class Hud {
   constructor(scene){
@@ -11,7 +12,7 @@ export class Hud {
     this.onAction=this.onAction.bind(this);
     this.root.addEventListener('click',this.onAction);
     const tray=document.querySelector('#battle-loadout');
-    if(tray){tray.innerHTML=scene.mission?scene.mission.loadout.map((id,i)=>`<button data-tower="${id||''}" ${!id?'disabled':''}>${i+1} · ${id?TOWERS[id].name:'Empty'}<small>${id?TOWERS[id].cost+' cash':''}</small></button>`).join(''):'';}
+    if(tray){tray.innerHTML=scene.mission?scene.mission.loadout.map((id,i)=>`<button data-tower="${id||''}" ${!id?'disabled':''}>${portrait(id)}${i+1} · ${id?TOWERS[id].name:'Empty'}<small>${id?TOWERS[id].cost+' cash':''}</small></button>`).join(''):'';}
     const back=document.querySelector('#return-hq');if(back)back.hidden=!scene.app;
   }
   onAction(e){
@@ -37,7 +38,7 @@ export class Hud {
     this.nodes.restart.hidden=!s.terminal;
     this.nodes.place.disabled=s.terminal||s.intro>0;
     this.nodes.place.hidden=!!s.mission;
-    const boss=b.enemies.find(e=>e.boss);const bossHud=document.querySelector('#boss-status');if(bossHud){bossHud.hidden=!boss;bossHud.textContent=boss?'BASTION CARRIER · '+boss.health+' / '+boss.maxHealth:'';}
+    const boss=b.enemies.find(e=>e.boss);const bossHud=document.querySelector('#boss-status');if(bossHud){bossHud.hidden=!boss;bossHud.textContent=boss?(['fallen','hardcore','voidcore'].includes(s.mission?.mode)?'RIFT BRUTE':'HOLLOW BRUTE')+' · '+Math.ceil(boss.health)+' / '+boss.maxHealth:'';}
     this.nodes.place.setAttribute('aria-pressed',String(s.placing));
     this.set('outcome',b.state==='WON'?'Route secured.':b.state==='LOST'?'Base breached.':'');
     this.set('hint',s.message);

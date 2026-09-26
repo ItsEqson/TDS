@@ -29,5 +29,5 @@ export class LobbyScene {
   render(renderer){renderer.render(this.scene,this.camera);}
   resize(w,h){this.camera.aspect=w/h;this.camera.updateProjectionMatrix();}
   exit(){this.input.dispose();}
-  dispose(){this.scene.traverse(o=>{if(o.material?.map)o.material.map.dispose();});disposeObject(this.scene);}
+  dispose(){disposeObject(this.scene);}
 }

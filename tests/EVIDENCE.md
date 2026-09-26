@@ -60,3 +60,27 @@ The headquarters checks cover malformed/missing/future saves, purchase persisten
 Only the embedded Chromium surface was available. Physical phone multi-touch, current native Chrome/Edge/Firefox, audible audio-quality review and a genuine native hidden-tab/resume transition are unverified. The movement test exercises touch state but does not replace a physical multi-touch check. The viewport override did not change the embedded page's dimensions, so phone/landscape visual inspection used a real fixed-size iframe instead. Controlled visibility and resize lifecycle checks pass.
 
 Story/Hardcore/Event/Sandbox content, combat upgrades/evolution, extended shop categories, multi-wave campaigns and story-driven headquarters changes are not implemented. Their UI states and README explicitly identify this boundary; passing tests do not claim completion of the full brainstorm.
+
+## 2026-09-23 — Character roster and artwork
+
+- Static Python HTTP server; embedded Chromium browser. 12/12 logic, 5/5 lifecycle, 11/11 headquarters, and 6/6 new roster checks passed (34 total).
+- All 74 portraits loaded; all 74 recruits were purchased, equipped and round-tripped through in-memory saves. Duplicate purchases do not charge again. Hardcore purchases require shards.
+- Verified splash, control with boss immunity, damage-over-time, income, healing, nonstacking support, and friendly runners. Fallen, Hardcore and Voidcore simulation runs won and awarded shards; reset cleared entities.
+- Inspected inventory portraits and rotating human models, shop portraits, hardcore category filtering, mission selection and a live Voidcore zombie encounter. Main game console checks reported no errors.
+- Existing checks exercised rendered win/loss, three restart cycles, repeated scene transitions, geometry disposal, responsive cameras, and input cleanup.
+- Visually inspected 652px layout and a real 390 x 844 iframe. Fixed shrinking tower cards that created nested scrollbars and visually confirmed the corrected phone inventory.
+- A later accessibility interaction with the responsive iframe emitted a MutationObserver error from browser tooling; the repository contains no MutationObserver usage. The main game was checked separately.
+- Native Chrome/Edge/Firefox, physical touch, long-session performance and full roster balance remain unverified. All kits use prototype ground placement; advanced per-character systems and full campaigns remain unfinished.
+- git diff --check passed.
+
+## 2026-09-25 — Color and material detail pass
+
+- Brighter jewel-tone headquarters stations, distinct display recruits, wall bands, floor inlays and original 128px procedural panel textures.
+- Added woven uniforms, layered armor, knee plates, utility belts, equipment lights and metallic accents to every tower model; textured zombie clothing and brighter enemy silhouettes.
+- Both arenas use detailed ground/road surfaces, perimeter trees/crystals and illuminated plinth edges. Gameplay remains entirely 3D.
+- Enriched all 74 original vector portraits and 14 navigation icons with colored gradients, highlights and equipment detail. `scripts/enrich_art.py` reapplies the artwork pass after roster generation.
+- Browser checks: 12 logic + 5 lifecycle + 11 headquarters + 6 roster = 34 passing. Roster disposal check now also requires uploaded surface textures to return to zero after model disposal.
+- Visually inspected headquarters, tower inventory, Copper Reach terrain and a live two-tower encounter. Checked 390x844 and 844x390 iframe layouts; fixed compact landscape help/loadout spacing.
+- All 88 SVG files parse successfully. Main-game and roster console inspection reported no warnings or errors. `git diff --check` passed.
+- Native browser matrix, physical touch and long-session performance remain unverified.
+- Final live validation: placed two recruits, reached WON with 10/10 base health, restarted to PREP with 200 cash and no towers, then returned to headquarters successfully. Final phone inspection confirmed separated movement/help/loadout controls.

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { material,mesh,createTowerMesh } from './createMeshes.js';
 import { STATIONS } from '../data/headquarters.js';
+import { TOWERS } from '../data/towers.js';
+import { surfaceMaterial } from './surfaceMaterial.js';
 export function sign(parent,text,x,y,z,color='#c5eee8',width=5){
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;
   const ctx=canvas.getContext('2d');ctx.fillStyle='#0c1c2b';ctx.fillRect(0,0,1024,128);ctx.font='600 58px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(text,512,68);
@@ -8,11 +10,11 @@ export function sign(parent,text,x,y,z,color='#c5eee8',width=5){
   return mesh(parent,new THREE.PlaneGeometry(width,width/8),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}),x,y,z);
 }
 export function createHeadquarters(scene,prep,profile,map){
-  scene.background=new THREE.Color(0x101c2b);scene.fog=new THREE.Fog(0x101c2b,30,75);
+  scene.background=new THREE.Color(0x263967);scene.fog=new THREE.Fog(0x263967,35,85);
   scene.add(new THREE.HemisphereLight(0xc4e5ff,0x3a414f,2.3));
   const sun=new THREE.DirectionalLight(0xffe1b0,2.6);sun.position.set(4,18,8);scene.add(sun);
   const root=new THREE.Group();scene.add(root);
-  const dark=material(0x172837),steel=material(0x344959),floor=material(0x273b49),white=material(0xa1b4b8);
+  const dark=surfaceMaterial(0x26365d),steel=surfaceMaterial(0x5878a2),floor=surfaceMaterial(0x47718c,'panel',18),white=material(0xc3deef);
   const glow=new THREE.MeshBasicMaterial({color:0x8cddcf}),gold=new THREE.MeshBasicMaterial({color:0xf5bd77});
   const box=(w,h,d,mat,x,y,z)=>mesh(root,new THREE.BoxGeometry(w,h,d),mat,x,y,z);
   box(46,.3,46,floor,0,-.2,0);
@@ -21,17 +23,35 @@ export function createHeadquarters(scene,prep,profile,map){
   for(const x of [-21,21])for(const z of [-20,-10,0,10,20]){box(1,10,1,steel,x,5,z);box(.08,7,1.04,glow,x,4,z);}
   for(const z of [-18,-6,6,18]){box(44,.45,.6,steel,0,9,z);box(28,.06,.25,white,0,8.7,z);}
   for(const x of [-3,3])box(.08,.03,35,glow,x,.03,0);
+  const zoneColors=[0x26dfdb,0x9970ff,0xffb637,0xff638f];
+  for(let i=0;i<4;i++){
+    const accent=material(zoneColors[i]);accent.emissive.set(zoneColors[i]);accent.emissiveIntensity=.25;
+    const x=i%2===0?-22.5:22.5,z=i<2?-11:11;
+    box(.12,3.6,15,accent,x,5.5,z);
+    for(let k=0;k<6;k++)box(.16,.1,1.6,white,x+(x<0?.1:-.1),4.2+k*.45,z);
+  }
+  for(const x of [-6,6])for(let z=-18;z<20;z+=4){
+    const stripe=box(.8,.035,.16,gold,x,.025,z);stripe.rotation.y=x<0?-.5:.5;
+  }
   const obstacles=[],rotors=[],stations=prep?[{id:'briefing',name:'MISSION BRIEFING',x:0,z:-11,color:0x8cddcf}]:STATIONS;
   for(const s of stations){
     const group=new THREE.Group();group.position.set(s.x,0,s.z);group.rotation.y=Math.atan2(-s.x,-s.z);root.add(group);
     const mat=new THREE.MeshBasicMaterial({color:s.color});
+    const enamel=material(s.color);enamel.metalness=.3;enamel.roughness=.35;
     mesh(group,new THREE.BoxGeometry(7,.3,4),steel,0,.1,0);
+    mesh(group,new THREE.BoxGeometry(7,.08,4),enamel,0,.28,0);
+    for(const x of [-3.1,3.1]){
+      mesh(group,new THREE.BoxGeometry(.18,4.6,.2),mat,x,2.4,-.8);
+      mesh(group,new THREE.BoxGeometry(.65,.12,3.5),enamel,x,.36,0);
+    }
+    const halo=mesh(group,new THREE.TorusGeometry(1.1,.045,6,40),mat,0,.4,1);halo.rotation.x=Math.PI/2;
     mesh(group,new THREE.BoxGeometry(6,3,.6),dark,0,1.6,-1.2);
     mesh(group,new THREE.BoxGeometry(6,.09,.1),mat,0,3.2,-.84);
     sign(group,s.name,0,4,-.7,'#'+s.color.toString(16),6);
     for(const x of [-3.4,3.4])mesh(group,new THREE.BoxGeometry(.28,5,.35),steel,x,2.5,-1);
     for(let i=0;i<7;i++){const bar=mesh(group,new THREE.BoxGeometry(.35,.3+i%3*.3,.08),mat,-2.2+i*.7,1.5,-.85);rotors.push({object:bar,type:'screen',phase:i});}
-    const t=createTowerMesh();t.position.set(0,.4,1);t.scale.setScalar(.65);group.add(t);rotors.push({object:t,type:'tower'});
+    const displayIds=['prism-sentry','longwatch','blast-courier','field-mender','spark-warden','dawn-champion','winter-channeler','frequency-artist'];
+    const t=createTowerMesh(false,TOWERS[displayIds[Math.max(0,STATIONS.findIndex(st=>st.id===s.id))]]);t.position.set(0,.4,1);t.scale.setScalar(.85);group.add(t);rotors.push({object:t,type:'tower'});
     obstacles.push({x:s.x,z:s.z,radius:3.8});
   }
   // Deployment portal is an actual lit volume behind the operations terminal.

@@ -1,6 +1,14 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
-## Active Work — User-directed Headquarters Prototype (2026-09-22)
+## Active Work — Character Roster and Interface Artwork (2026-09-23)
+
+The user's latest request explicitly advances the full brainstorm roster and character artwork. Delivered scope: 74 original recruits mapped to all named tower roles, including evolved/golden/story counterparts; original SVG portraits and navigation/card artwork; human procedural models for every deployable; zombies and void zombies; Fallen and Hardcore / Voidcore compact encounters; full catalog purchases with existing save compatibility and shard unlocks for hardcore recruits.
+
+Working prototype kits include direct fire, rapid fire, splash, multi-target strikes, slowing/freezing, damage over time, income, healing, nonstacking attack-speed support, cash on hit, and friendly runners. All recruits use ground placement. Individual advanced abilities, flying units, vehicles, combat upgrade trees, specialized detection, and full multi-wave campaigns are not delivered by this roster pass. Original names and designs are used; `sourceRole` in tower data maps the brainstorm references.
+
+Verification: 34 browser checks pass (12 logic, 5 lifecycle, 11 headquarters, 6 roster). The new roster suite checks purchases and save round trips for all 74 recruits, portrait loading, specialist effects, void victories and shard rewards, and rendering/resource disposal. See `tests/EVIDENCE.md` for visual checks.
+
+## Previous Work — User-directed Headquarters Prototype (2026-09-22)
 
 The latest explicit request advances work beyond the former Phase 1 boundary: first-person headquarters/preparation movement, elevated third-person battles, the headquarters UI and a connected mission flow. This scoped prototype is now active. The historical phase gates below remain; this does not mark Phase 2 or Phase 3 complete.
 
@@ -157,3 +165,7 @@ Make the established experience expressive, accessible, performant, and cohesive
 Evolved/golden variants, large event rosters, player-controlled advanced towers, exclusive towers, randomized high-cost chests, ranked/PvP, parties, social leaderboards, gift codes, battle passes, sandbox/admin modes, and every named reference boss remain deferred until the core cooperative/single-player tower-defense loop and original content pipeline are stable.
 
 No item enters production merely because it appears in `raw_game_ideas.md` or a reference screenshot. It must first be assigned to an active milestone with acceptance criteria.
+
+## User-directed visual polish — 2026-09-25
+
+The latest request authorizes richer colors and details across existing content. Added original procedural surface textures, tower equipment details, colorful headquarters architecture, terrain dressing, and enriched vector portraits/icons and menus. This does not expand gameplay scope or complete the broader Phase 4 milestone. Browser validation and remaining limits are recorded in `tests/EVIDENCE.md`.

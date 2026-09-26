@@ -1,5 +1,7 @@
+import { SPECIALIST as S } from '../data/specialists.js';
 import { STATES, isTerminal, canTransition } from '../core/State.js';
 import { WAVE } from '../data/waves.js';
+import { updateSpecialists } from './specialists.js';
 import { TOWERS } from '../data/towers.js';
 import { OPERATION } from '../data/headquarters.js';
 import { WAYPOINTS } from '../data/arena.js';
@@ -27,7 +29,7 @@ export class WaveManager {
     this.elapsed=0;
     this.nextSpawn=0;
     this.enemies=[];
-    this.towers=[];
+    this.towers=[];this.allies=[];this.nextAllyId=0;
   }
   transition(next){
     if(!canTransition(this.state,next))return false;
@@ -75,18 +77,21 @@ export class WaveManager {
     if(this.state!==STATES.WAVE_ACTIVE)return;
     while(this.spawned<this.count&&this.elapsed+1e-9>=this.nextSpawn){
       const boss=!!this.mission&&this.spawned===this.count-1;
-      const multiplier=this.mission?.mode==='challenge'?OPERATION.challengeSpeed:1;
-      this.enemies.push(createEnemy(++this.spawned,this.path,this.mission?{health:boss?OPERATION.bossHealth:ENEMY.health,speed:(boss?OPERATION.bossSpeed:ENEMY.speedUnitsPerSecond)*multiplier,boss}:{}));
+      const multiplier=['challenge','hardcore','voidcore'].includes(this.mission?.mode)?OPERATION.challengeSpeed:1;
+      this.enemies.push(createEnemy(++this.spawned,this.path,this.mission?{health:(boss?OPERATION.bossHealth:ENEMY.health)*(['hardcore','voidcore'].includes(this.mission?.mode)?S.voidHealthMultiplier:1),speed:(boss?OPERATION.bossSpeed:ENEMY.speedUnitsPerSecond)*multiplier,boss}:{}));
       this.nextSpawn+=WAVE.spawnIntervalSeconds;
     }
     this.elapsed+=dt;
+    updateSpecialists(this,dt);
     for(const e of this.enemies){
+      if(e.resolved)continue;
       if(moveEnemy(e,dt,this.segments,this.pathLength))this.resolve(e,true);
       if(isTerminal(this.state))break;
     }
     if(!isTerminal(this.state))for(const t of this.towers){
       const target=updateTower(t,this.enemies,dt);
-      if(target&&target.health===0)this.resolve(target,false);
+      if(target&&t.definition.kit==='bounty')this.cash+=S.bountyCash;
+      for(const e of this.enemies)if(!e.resolved&&e.health<=0)this.resolve(e,false);
     }
     for(let i=this.enemies.length-1;i>=0;i--)if(this.enemies[i].resolved)this.enemies.splice(i,1);
     if(this.state===STATES.WAVE_ACTIVE&&this.spawned===this.count&&this.enemies.length===0&&this.health>0)this.transition(STATES.WON);

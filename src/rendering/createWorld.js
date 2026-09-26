@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { ARENA, WAYPOINTS, SEGMENTS } from '../data/arena.js';
 import { material, mesh } from './createMeshes.js';
+import { surfaceMaterial } from './surfaceMaterial.js';
 export function createWorld(scene,map=null){
   const points=map?.path||WAYPOINTS;
   const segments=points.slice(1).map((end,i)=>({start:points[i],end,length:Math.hypot(end.x-points[i].x,end.z-points[i].z)}));
   const world=new THREE.Group();
   scene.add(world);
-  const ground=material(map?.color||0x507c70),rock=material(0x304e50),road=material(0xe0c797),edge=material(0xa28d64),dark=material(0x213b43),pale=material(0xd8e3cc),glow=material(0x7ce2c2);
+  const frozen=map?.id==='frostline';
+  const ground=surfaceMaterial(frozen?0x8ddaea:0x43b58a,'terrain',6),rock=surfaceMaterial(0x364675,'grain',5),road=surfaceMaterial(frozen?0xc7daff:0xf3ca87,'grain',4),edge=material(0xffa741),dark=material(0x263960),pale=material(0xd8eaff),glow=material(0x43ffe2);
   mesh(world,new THREE.BoxGeometry(ARENA.width,1.3,ARENA.depth),rock,0,-.7);
   const terrain=mesh(world,new THREE.BoxGeometry(ARENA.width,.18,ARENA.depth),ground,0,-.09);
   for(const s of segments){
@@ -24,6 +26,16 @@ export function createWorld(scene,map=null){
   mesh(world,new THREE.CylinderGeometry(.72,.9,1.5,6),pale,end.x,1.2,end.z);
   mesh(world,new THREE.OctahedronGeometry(.65),glow,end.x,2.25,end.z);
   const start=points[0];
+  // Border dressing leaves the placement field and tactical road unobstructed.
+  const foliage=material(frozen?0x72a7ed:0x238665),tips=material(frozen?0xc3f9ff:0x8bdb63),trunk=material(0x845d63);
+  for(let i=0;i<16;i++){
+    const x=-13+i*1.75,z=i%2===0?-9.5:9.5;
+    mesh(world,new THREE.CylinderGeometry(.09,.14,.65,5),trunk,x,.3,z);
+    mesh(world,new THREE.ConeGeometry(.55,1.1,5),foliage,x,1,z);
+    mesh(world,new THREE.ConeGeometry(.36,.75,5),tips,x,1.5,z);
+    mesh(world,new THREE.DodecahedronGeometry(.2,0),rock,x+.65,.15,z);
+  }
+  for(const z of [-10,10])mesh(world,new THREE.BoxGeometry(28,.1,.08),glow,0,-.25,z);
   for(const z of [-1.2,1.2])mesh(world,new THREE.BoxGeometry(.3,1.8,.3),dark,start.x,.9,start.z+z);
   mesh(world,new THREE.BoxGeometry(.3,.25,2.7),edge,start.x,1.85,start.z);
   scene.add(new THREE.HemisphereLight(0xeaf7ea,0x253839,2.5));

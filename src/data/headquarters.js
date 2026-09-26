@@ -7,7 +7,9 @@ export const MAPS = Object.freeze([
 export const MODES = Object.freeze([
   {id:'survival',name:'Survival',detail:'Defend the relay against a ground swarm.',available:true},
   {id:'challenge',name:'Challenge',detail:'Faster threats. 50% extra mission coins.',available:true},
-  ...['Story','Hardcore','Event','Sandbox'].map(name=>({id:name.toLowerCase(),name,detail:'Additional mission content in development.',available:false}))
+  {id:'fallen',name:'Fallen',detail:'Void zombies and a Rift Brute. Victory awards 50 shards.',available:true},
+  {id:'hardcore',name:'Hardcore / Voidcore',detail:'Faster void zombies and a stronger Rift Brute. Victory awards 50 shards.',available:true},
+  ...['Story','Event','Sandbox'].map(name=>({id:name.toLowerCase(),name,detail:'Additional mission content in development.',available:false}))
 ]);
 export const STATIONS = Object.freeze([
   {id:'missions',name:'DEPLOYMENT',x:0,z:-17,color:0x8cddcf},

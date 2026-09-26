@@ -1,3 +1,13 @@
+## Character roster update
+
+The armory and shop now contain **74 original human recruits** representing every tower role named in `raw_game_ideas.md`, including evolved, golden, and story counterparts. Each has a portrait, a rotating human 3D model, an unlock price, and a working prototype combat role. Inventory and shop have category filters. Existing collection saves and equipped IDs are retained.
+
+Normal encounters use zombies. Fallen and Hardcore / Voidcore use purple void zombies and a Rift Brute. These are compact encounters, not full difficulty campaigns. Void victories award 50 shards; hardcore recruits cost shards and other recruits cost coins. Advanced character-specific abilities, combat upgrade trees, aircraft, vehicles, cliff placement, and detection systems remain future work. Summoner characters currently send friendly human runners; support auras do not stack.
+
+Run `python -m http.server 8011` and open `http://localhost:8011`. Tests: `/tests/index.html`, `/tests/lifecycle.html`, `/tests/headquarters.html`, `/tests/roster.html`. Python only serves static files; the game has no build step. `scripts/expand_roster.py` regenerates the original roster data and vector artwork.
+
+The older prototype notes below describe the earlier delivery and are superseded by this roster update where they differ.
+
 # Copper Reach — Headquarters prototype
 
 Original browser-first 3D tower defense, using Three.js 0.180.0, native ES modules and a single renderer. No install or build step.
@@ -46,3 +56,7 @@ See `tests/EVIDENCE.md` for observed results and browser limitations. Native Chr
 ## Ownership
 
 `Game` owns the single fixed-step/render loop and renderer. `SceneRouter` owns the active scene, immutable mission snapshot, shared UI, profile and audio. `LobbyScene` mirrors plain walking state; `BattleScene` mirrors `WaveManager`. Each scene removes its listeners and disposes its resources when left. `SaveStore` is the only localStorage caller. Models and world signage are original procedural assets; reference screenshots are never runtime imports.
+
+### Color and material update
+
+Existing 3D spaces now include procedural panel, fabric and terrain textures, layered tower equipment, brighter station architecture and arena dressing. All 74 original SVG portraits and 14 interface icons have richer color and highlights. Run `python scripts/enrich_art.py` after regenerating roster artwork to reapply the SVG detail pass; it is idempotent and is not a runtime/build dependency.

@@ -1,6 +1,8 @@
+import { SPECIALIST as S } from '../data/specialists.js';
+import { TOWERS } from '../data/towers.js';
 import { ECONOMY } from '../data/headquarters.js';
 const KEY='copper-reach-profile-v1';
-const initial=()=>({version:1,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:['prism-sentry'],loadout:['prism-sentry',null,null],skins:['standard'],skin:'standard',crates:0,tickets:1,claims:[],loginDay:'',loginCount:0,codes:[],records:{},secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
+const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:['prism-sentry'],loadout:['prism-sentry',null,null],skins:['standard'],skin:'standard',crates:0,tickets:1,claims:[],loginDay:'',loginCount:0,codes:[],records:{},secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
 // Profile mutations and persistence have one owner. Invalid saves recover field by field.
 export class SaveStore {
   constructor(storage){
@@ -12,9 +14,9 @@ export class SaveStore {
   }
   normalize(raw){
     const p=initial();if(!raw||raw.version!==1)return p;
-    for(const key of ['coins','xp','wins','kills','played','missions','crates','tickets','loginCount','flawless'])if(Number.isFinite(raw[key])&&raw[key]>=0)p[key]=Math.min(raw[key],1e9);
+    for(const key of ['shards','coins','xp','wins','kills','played','missions','crates','tickets','loginCount','flawless'])if(Number.isFinite(raw[key])&&raw[key]>=0)p[key]=Math.min(raw[key],1e9);
     for(const key of ['claims','codes'])if(Array.isArray(raw[key]))p[key]=raw[key].filter(x=>typeof x==='string').slice(0,1000);
-    p.owned=['prism-sentry',...(Array.isArray(raw.owned)&&raw.owned.includes('longwatch')?['longwatch']:[])];
+    p.owned=[...new Set(['prism-sentry',...(Array.isArray(raw.owned)?raw.owned.filter(id=>Object.hasOwn(TOWERS,id)):[])])];
     p.skins=['standard',...['amber','violet'].filter(x=>Array.isArray(raw.skins)&&raw.skins.includes(x))];
     p.skin=p.skins.includes(raw.skin)?raw.skin:'standard';
     const used=new Set();p.loadout=Array.from({length:3},(_,i)=>{const id=raw.loadout?.[i];if(!p.owned.includes(id)||used.has(id))return null;used.add(id);return id;});
@@ -36,9 +38,10 @@ export class SaveStore {
   equip(id,slot){return this.change(p=>{if(slot<0||slot>2||!p.owned.includes(id))return false;const old=p.loadout.indexOf(id),replaced=p.loadout[slot];if(old>=0)p.loadout[old]=replaced;p.loadout[slot]=id;return true;});}
   unequip(slot){this.change(p=>{if(slot>=0&&slot<3)p.loadout[slot]=null;});}
   buy(kind){return this.change(p=>{
-    const price=kind==='longwatch'?ECONOMY.towerPrice:kind==='crate'?ECONOMY.cratePrice:ECONOMY.skinPrice;
-    if(!['longwatch','crate','amber'].includes(kind)||p.coins<price||p.owned.includes(kind)||p.skins.includes(kind))return 'Purchase unavailable.';
-    p.coins-=price;if(kind==='longwatch')p.owned.push(kind);else if(kind==='crate')p.crates++;else p.skins.push(kind);return 'Added to your collection.';
+    const tower=Object.hasOwn(TOWERS,kind)?TOWERS[kind]:null;const currency=tower?.currency||'coins';
+    const price=tower?tower.unlockPrice:kind==='crate'?ECONOMY.cratePrice:ECONOMY.skinPrice;
+    if((!tower&&!['crate','amber'].includes(kind))||p[currency]<price||p.owned.includes(kind)||p.skins.includes(kind))return 'Purchase unavailable.';
+    p[currency]-=price;if(tower)p.owned.push(kind);else if(kind==='crate')p.crates++;else p.skins.push(kind);return 'Added to your collection.';
   });}
   claim(id){return this.change(p=>{
     this.refreshPeriods();
@@ -57,6 +60,7 @@ export class SaveStore {
   complete(battle,mission){return this.change(p=>{
     this.refreshPeriods();
     const won=battle.state==='WON',reward=won?Math.round(ECONOMY.winCoins*(mission.mode==='challenge'?1.5:1)):ECONOMY.lossCoins;
+    if(won&&['fallen','hardcore','voidcore'].includes(mission.mode))p.shards+=S.victoryShards;
     p.missions++;p.kills+=battle.killed;p.coins+=reward;p.xp+=won?50:10;
     p.daily.missions++;p.weekly.kills+=battle.killed;if(won&&battle.health===10)p.flawless++;
     for(const id of new Set(battle.towers.map(t=>t.definition.id)))p.mastery[id]=(p.mastery[id]||0)+(won?25:5);

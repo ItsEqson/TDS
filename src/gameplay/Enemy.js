@@ -9,7 +9,7 @@ export function moveEnemy(e,dt,segments=SEGMENTS,pathLength=PATH_LENGTH){
   if(e.resolved)return false;
   e.previousX=e.x;
   e.previousZ=e.z;
-  let travel=(e.speed||ENEMY.speedUnitsPerSecond)*dt;
+  let travel=(e.speed||ENEMY.speedUnitsPerSecond)*(e.slowRemaining>0?(e.slowFactor??1):1)*dt;
   while(travel>0&&e.segment<segments.length){
     const s=segments[e.segment];
     const step=Math.min(travel,s.length-e.segmentProgress);
