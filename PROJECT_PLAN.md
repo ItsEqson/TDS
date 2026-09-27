@@ -1,5 +1,13 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
+## Active Work — Mode Staging, Waves and Tower Controls (2026-09-26)
+
+The latest user request advances the prototype to a mode category flow and multi-wave battles. Survival presents Beginner, Easy, Intermediate, Molten, and Fallen. Hardcore presents Start until a Hardcore victory unlocks Voidcore. Selecting a mode enters a walkable staging lobby, replacing the old small preparation room; map and loadout can change there before deployment. The commander appears and moves during battle. The mission entry control is centered near the bottom of headquarters.
+
+All 74 tower display names now match their `sourceRole` names from the brainstorm while stable IDs and saved collections remain compatible. Inventory uses portrait/name/skin cards and a separate 3D detail view. Placed towers have five battle upgrade levels, improved stats, per-tower damage totals, visible level changes, and sell refunds. Shared prototype kits now cover direct fire, burst/focus, boss damage, splash, chaining, pierce, control, damage-over-time, economy, healing, support, bounty, and allies. These do not yet implement every bespoke character ability described in the brainstorm.
+
+Mode campaigns use 5–25 escalating waves, rising enemy count/health/speed, wave-clear cash, and a final boss label. The named bosses still share the current procedural boss model; enemy families and individually authored boss attacks remain future content. The two existing maps remain available. Browser evidence is in `tests/EVIDENCE.md`.
+
 ## Active Work — Character Roster and Interface Artwork (2026-09-23)
 
 The user's latest request explicitly advances the full brainstorm roster and character artwork. Delivered scope: 74 original recruits mapped to all named tower roles, including evolved/golden/story counterparts; original SVG portraits and navigation/card artwork; human procedural models for every deployable; zombies and void zombies; Fallen and Hardcore / Voidcore compact encounters; full catalog purchases with existing save compatibility and shard unlocks for hardcore recruits.

@@ -33,7 +33,7 @@ export function createHeadquarters(scene,prep,profile,map){
   for(const x of [-6,6])for(let z=-18;z<20;z+=4){
     const stripe=box(.8,.035,.16,gold,x,.025,z);stripe.rotation.y=x<0?-.5:.5;
   }
-  const obstacles=[],rotors=[],stations=prep?[{id:'briefing',name:'MISSION BRIEFING',x:0,z:-11,color:0x8cddcf}]:STATIONS;
+  const obstacles=[],rotors=[],stations=prep?[{id:'briefing',name:'STAGING CONSOLE',x:0,z:-11,color:0x8cddcf}]:STATIONS;
   for(const s of stations){
     const group=new THREE.Group();group.position.set(s.x,0,s.z);group.rotation.y=Math.atan2(-s.x,-s.z);root.add(group);
     const mat=new THREE.MeshBasicMaterial({color:s.color});
@@ -57,7 +57,7 @@ export function createHeadquarters(scene,prep,profile,map){
   // Deployment portal is an actual lit volume behind the operations terminal.
   for(const x of [-4.4,4.4])box(.6,7,1.8,steel,x,3.5,-20);
   box(9.4,.6,1.8,steel,0,7,-20);box(7.8,5.8,.2,glow,0,3.2,-22);
-  sign(root,prep?'READY FOR TRANSFER':'COPPER REACH / COMMAND',0,8,-21,'#e0ebe7',12);
+  sign(root,prep?'MISSION STAGING / '+map.name.toUpperCase():'COPPER REACH / COMMAND',0,8,-21,'#e0ebe7',12);
   const ring=mesh(root,new THREE.TorusGeometry(2,.06,6,64),gold,0,6,-20);rotors.push({object:ring,type:'ring'});
   // Freight carrier overhead and rotating machinery keep the unoccupied base active.
   const carrier=new THREE.Group();root.add(carrier);
@@ -67,13 +67,12 @@ export function createHeadquarters(scene,prep,profile,map){
   sign(root,'SERVICE ACCESS / 07',-20,2.5,20,'#7691a4',3);
   let hologram=null;
   if(prep){
-    box(11,1.1,8,dark,0,.55,0);box(11.2,.08,8.2,steel,0,1.15,0);for(const x of [-5.5,5.5])box(.06,.04,8.1,glow,x,1.22,0);for(const z of [-4,4])box(11,.04,.06,glow,0,1.22,z);obstacles.push({x:0,z:0,radius:5.8});
-    hologram=new THREE.Group();hologram.position.set(0,1.3,0);hologram.scale.setScalar(.32);root.add(hologram);
-    const mat=new THREE.MeshBasicMaterial({color:map.color,wireframe:true});mesh(hologram,new THREE.BoxGeometry(28,.3,20),mat);
-    const pathMat=new THREE.MeshBasicMaterial({color:0xd2ffec});
-    for(let i=1;i<map.path.length;i++){const a=map.path[i-1],b=map.path[i];const road=mesh(hologram,new THREE.BoxGeometry(1.8,.35,Math.hypot(b.x-a.x,b.z-a.z)),pathMat,(a.x+b.x)/2,.4,(a.z+b.z)/2);road.rotation.y=Math.atan2(b.x-a.x,b.z-a.z);}
-    sign(root,map.name.toUpperCase(),0,5,-10,'#d1edea',8);
-    if(map.id==='frostline')for(let i=0;i<14;i++)mesh(root,new THREE.ConeGeometry(.3,.8,4),white,-6+i,7,-20);
+    // The staging lobby stays walkable: map and loadout controls live in the HUD.
+    const stageColor=new THREE.MeshStandardMaterial({color:map.color,metalness:.35,roughness:.45});
+    for(const x of [-8,8]){box(1.2,4,1.2,stageColor,x,2,-7);box(1.6,.2,1.6,glow,x,4.1,-7);}
+    const arch=mesh(root,new THREE.TorusGeometry(3,.18,8,48),stageColor,0,4,-12);rotors.push({object:arch,type:'ring'});
+    sign(root,'CHOOSE MAP · EQUIP · DEPLOY',0,5,-10,'#d1edea',8);
+    if(map.id==='frostline')for(let i=0;i<10;i++)mesh(root,new THREE.ConeGeometry(.2,.6,4),white,-5+i,7,-20);
   }
   return {root,obstacles,rotors,hologram};
 }

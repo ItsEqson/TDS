@@ -1,3 +1,11 @@
+## Current play flow (2026-09-26)
+
+Start in the 3D headquarters. **Choose mission** sits above the bottom loadout dock. Survival lets you pick Beginner, Easy, Intermediate, Molten, or Fallen; Hardcore starts directly, then offers Voidcore after a Hardcore victory. Starting a mode opens the walkable staging lobby with the same player session and loadout. Choose a map, edit the three equipped slots, then deploy. During battle, WASD moves the commander model; the elevated camera keeps placement visible.
+
+Each difficulty runs 5–25 waves with rising enemy count, health, and speed, a final boss, and growing wave-clear cash. Click a placed tower to inspect its special kit, level, current damage/range/fire interval, total damage dealt, upgrade price, and sell refund. Towers have five battle upgrade levels; upgrades improve stats and visibly enlarge their model. Summon damage and damage-over-time count toward the owning tower. The collection now opens as skin/name cards, with a separate 3D inspection view for each tower. Saved content IDs stay compatible while display names follow `raw_game_ideas.md`.
+
+The roster uses 19 working prototype kits rather than 74 bespoke abilities. Existing portraits are original artwork and shared finishes remain the available skins. Only the currently authored 3D maps and enemy models are available; the named mode bosses use the current boss model and scaling.
+
 ## Character roster update
 
 The armory and shop now contain **74 original human recruits** representing every tower role named in `raw_game_ideas.md`, including evolved, golden, and story counterparts. Each has a portrait, a rotating human 3D model, an unlock price, and a working prototype combat role. Inventory and shop have category filters. Existing collection saves and equipped IDs are retained.

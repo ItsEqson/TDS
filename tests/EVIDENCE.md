@@ -84,3 +84,11 @@ Story/Hardcore/Event/Sandbox content, combat upgrades/evolution, extended shop c
 - All 88 SVG files parse successfully. Main-game and roster console inspection reported no warnings or errors. `git diff --check` passed.
 - Native browser matrix, physical touch and long-session performance remain unverified.
 - Final live validation: placed two recruits, reached WON with 10/10 base health, restarted to PREP with 200 cash and no towers, then returned to headquarters successfully. Final phone inspection confirmed separated movement/help/loadout controls.
+
+## 2026-09-26 — Modes, staging and tower controls
+
+- Served the static game locally and opened it in the in-app Chromium browser. The full browser suites passed: 12/12 core logic, 5/5 lifecycle, 11/11 headquarters and 10/10 roster checks (38 total). The roster checks now cover five upgrades, a one-time sell refund, wave escalation, long mode progression, a viable two-Scout Beginner run with affordable upgrades, and the persisted Hardcore unlock.
+- Exercised the visible Survival choices, verified Fallen appears under Survival, and verified the initial Hardcore screen offers only Hardcore Start. Started a mode, entered the walkable staging lobby, changed the map to Frostline, and deployed. The same saved loadout and commander session continued into battle.
+- In a live Beginner battle, placed a Scout on 3D terrain, upgraded it from level 0 to level 1 (damage 5 to 6.6, range 6.5 to 6.9, interval 0.65 to 0.60 seconds), observed its damage total rise during a wave, and sold it for the displayed 93 cash. The selected-tower buttons remain mounted while the HUD updates.
+- Visually inspected the centered mission control, staging lobby and selected-tower HUD. The 390 × 844 phone layout keeps touch movement clear of the mission button; the 844 × 390 landscape layout retains the loadout and mission button. Main-game console reported no warnings or errors. The headquarters suite exercised repeated scene transitions and resource cleanup; lifecycle checks covered resize and restart.
+- Still unverified: native Chrome/Edge/Firefox and physical touch. The roster has shared prototype kits and the mode bosses share one procedural model; fully bespoke abilities, enemy families and boss attacks remain unbuilt.

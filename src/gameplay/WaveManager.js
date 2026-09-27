@@ -3,16 +3,18 @@ import { STATES, isTerminal, canTransition } from '../core/State.js';
 import { WAVE } from '../data/waves.js';
 import { updateSpecialists } from './specialists.js';
 import { TOWERS } from '../data/towers.js';
-import { OPERATION } from '../data/headquarters.js';
+import { OPERATION,MODES } from '../data/headquarters.js';
 import { WAYPOINTS } from '../data/arena.js';
 import { ENEMY } from '../data/enemies.js';
 import { placementReason } from './Placement.js';
 import { createEnemy, moveEnemy, resolveEnemy } from './Enemy.js';
-import { createTower, updateTower } from './Tower.js';
+import { createTower, updateTower,upgradeCost } from './Tower.js';
 // Sole owner of all mutable battle data. No DOM or rendering imports.
 export class WaveManager {
   constructor(mission=null){
     this.mission=mission;
+    this.mode=MODES.find(m=>m.id===mission?.mode);
+    this.totalWaves=this.mode?.waves||1;
     this.path=mission?.path||WAYPOINTS;
     this.segments=this.path.slice(1).map((end,i)=>({start:this.path[i],end,length:Math.hypot(end.x-this.path[i].x,end.z-this.path[i].z)}));
     this.pathLength=this.segments.reduce((n,s)=>n+s.length,0);
@@ -21,6 +23,7 @@ export class WaveManager {
   }
   reset(){
     this.state=STATES.PREP;
+    this.wave=1;
     this.cash=WAVE.startingCash;
     this.health=WAVE.baseHealth;
     this.spawned=0;
@@ -37,7 +40,21 @@ export class WaveManager {
     return true;
   }
   start(){
-    return this.transition(STATES.WAVE_ACTIVE);
+    if(!this.transition(STATES.WAVE_ACTIVE))return false;
+    this.spawned=0;this.nextSpawn=0;this.elapsedWave=0;
+    this.count=this.mission?OPERATION.count+Math.min(this.wave-1,8)*2:WAVE.count;
+    return true;
+  }
+  upgrade(id){
+    const tower=this.towers.find(t=>t.id===id),cost=tower&&upgradeCost(tower);
+    if(!tower||isTerminal(this.state)||cost===null||this.cash<cost)return false;
+    this.cash-=cost;tower.invested+=cost;tower.level++;return true;
+  }
+  sell(id){
+    const index=this.towers.findIndex(t=>t.id===id);
+    if(index<0||isTerminal(this.state))return null;
+    const [tower]=this.towers.splice(index,1),refund=Math.floor(tower.invested*.6);
+    this.cash+=refund;return refund;
   }
   restart(){
     if(!isTerminal(this.state))return false;
@@ -75,13 +92,15 @@ export class WaveManager {
   }
   update(dt){
     if(this.state!==STATES.WAVE_ACTIVE)return;
-    while(this.spawned<this.count&&this.elapsed+1e-9>=this.nextSpawn){
-      const boss=!!this.mission&&this.spawned===this.count-1;
+    while(this.spawned<this.count&&this.elapsedWave+1e-9>=this.nextSpawn){
+      const boss=!!this.mission&&this.wave===this.totalWaves&&this.spawned===this.count-1;
       const multiplier=['challenge','hardcore','voidcore'].includes(this.mission?.mode)?OPERATION.challengeSpeed:1;
-      this.enemies.push(createEnemy(++this.spawned,this.path,this.mission?{health:(boss?OPERATION.bossHealth:ENEMY.health)*(['hardcore','voidcore'].includes(this.mission?.mode)?S.voidHealthMultiplier:1),speed:(boss?OPERATION.bossSpeed:ENEMY.speedUnitsPerSecond)*multiplier,boss}:{}));
+      const waveScale=(1+(this.wave-1)*.15)*(this.mode?.healthScale||1);
+      this.enemies.push(createEnemy(++this.spawned,this.path,this.mission?{health:Math.ceil((boss?OPERATION.bossHealth:ENEMY.health)*waveScale),speed:(boss?OPERATION.bossSpeed:ENEMY.speedUnitsPerSecond)*multiplier*(1+(this.wave-1)*.025),boss}:{}));
       this.nextSpawn+=WAVE.spawnIntervalSeconds;
     }
     this.elapsed+=dt;
+    this.elapsedWave+=dt;
     updateSpecialists(this,dt);
     for(const e of this.enemies){
       if(e.resolved)continue;
@@ -94,6 +113,9 @@ export class WaveManager {
       for(const e of this.enemies)if(!e.resolved&&e.health<=0)this.resolve(e,false);
     }
     for(let i=this.enemies.length-1;i>=0;i--)if(this.enemies[i].resolved)this.enemies.splice(i,1);
-    if(this.state===STATES.WAVE_ACTIVE&&this.spawned===this.count&&this.enemies.length===0&&this.health>0)this.transition(STATES.WON);
+    if(this.state===STATES.WAVE_ACTIVE&&this.spawned===this.count&&this.enemies.length===0&&this.health>0){
+      if(this.wave<this.totalWaves){this.cash+=20+this.wave*12;this.wave++;this.state=STATES.PREP;}
+      else this.transition(STATES.WON);
+    }
   }
 }

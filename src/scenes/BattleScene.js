@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { WaveManager } from '../gameplay/WaveManager.js';
+import { towerStats } from '../gameplay/Tower.js';
 import { placementReason } from '../gameplay/Placement.js';
 import { isTerminal } from '../core/State.js';
 import { Input } from '../core/Input.js';
 import { Hud } from '../ui/Hud.js';
 import { TOWER,TOWERS } from '../data/towers.js';
-import { SKINS,OPERATION } from '../data/headquarters.js';
+import { SKINS,OPERATION,FINAL_BOSSES } from '../data/headquarters.js';
 import { ENEMY } from '../data/enemies.js';
 import { createWorld } from '../rendering/createWorld.js';
 import { createTowerMesh,createEnemyMesh,createRange,createBeam,disposeObject } from '../rendering/createMeshes.js';
@@ -38,6 +39,10 @@ export class BattleScene {
     this.ghost=createTowerMesh(true,TOWERS[this.towerId]);this.ghostTowerId=this.towerId;
     this.ghost.visible=false;
     this.scene.add(this.ghost);
+    this.commander=createTowerMesh(false,TOWERS['prism-sentry']);this.commander.scale.setScalar(.85);
+    this.commander.position.set(THREE.MathUtils.clamp(this.app?.pose?.x||0,-11,11),0,THREE.MathUtils.clamp(this.app?.pose?.z||7,-7,7));
+    if(this.mission?.skin&&this.mission.skin!=='standard')this.commander.traverse(o=>{if(o.material?.name==='uniform')o.material.color.setHex(SKINS[this.mission.skin].color);});
+    this.scene.add(this.commander);
     this.range=createRange();
     this.scene.add(this.range);
     this.scene.updateMatrixWorld(true);
@@ -73,9 +78,25 @@ export class BattleScene {
   start(){
     if(this.intro>0)return;
     if(this.battle.start()){
-      this.message='Wave active. Defenders target the furthest enemy in range.';
+      this.message=`Wave ${this.battle.wave} / ${this.battle.totalWaves} active. Defenders target the furthest enemy in range.`;
       this.hud.update();
     }
+  }
+  upgrade(){
+    if(!this.selected)return;
+    if(this.battle.upgrade(this.selected.id)){
+      const model=this.towerMeshes.get(this.selected.id)?.model;
+      if(model)model.scale.setScalar(1+this.selected.level*.075);
+      this.showSelection();this.message=`${this.selected.definition.name} upgraded to level ${this.selected.level}.`;
+    }else this.message='Upgrade unavailable or insufficient cash.';
+    this.hud.update();
+  }
+  sell(){
+    if(!this.selected)return;
+    const id=this.selected.id,refund=this.battle.sell(id);
+    if(refund===null)return;
+    const meshes=this.towerMeshes.get(id);disposeObject(meshes.model);disposeObject(meshes.beam);this.towerMeshes.delete(id);
+    this.selected=null;this.range.visible=false;this.message=`Tower sold for ${refund} cash.`;this.hud.update();
   }
   restart(){
     if(this.app){this.app.go('battle');return;}
@@ -175,7 +196,7 @@ export class BattleScene {
       let root=this.hits[0].object;
       while(!root.userData.towerId&&root.parent)root=root.parent;
       this.selected=this.battle.towers.find(t=>t.id===root.userData.towerId);
-      const d=this.selected.definition;this.message=(d.name||'Relay Recruit')+' · '+d.damage+' damage · '+d.range+' range';
+      const d=this.selected.definition;this.message=d.name+' · level '+this.selected.level+' · '+this.selected.damageDone.toFixed(0)+' damage dealt';
     }
     else this.selected=null;
     this.showSelection();
@@ -184,15 +205,17 @@ export class BattleScene {
   showSelection(){
     this.range.visible=!!this.selected;
     if(this.selected){
-      this.range.scale.setScalar(this.selected.definition.range/TOWER.range);
+      this.range.scale.setScalar(towerStats(this.selected).range/TOWER.range);
       this.range.position.set(this.selected.x,.24,this.selected.z);
       this.range.material.color.setHex(0xb8f2cb);
     }
   }
   update(dt){
-    if(this.intro>0){this.intro=Math.max(0,this.intro-dt);this.message='Deployment flyover · tracing the approach to the relay';if(!this.intro)this.message='Commander: Ground swarm inbound. Stop the Hollow Brute before it reaches the relay.';this.hud.update();return;}
+    if(this.input&&!this.terminal){const dx=(this.input.axis?.('right','left')||0)*dt*5,dz=(this.input.axis?.('back','forward')||0)*dt*5;if(dx||dz){this.commander.position.x=THREE.MathUtils.clamp(this.commander.position.x+dx,-12,12);this.commander.position.z=THREE.MathUtils.clamp(this.commander.position.z+dz,-8,8);this.commander.rotation.y=Math.atan2(dx,dz);}}
+    if(this.intro>0){this.intro=Math.max(0,this.intro-dt);this.message='Deployment flyover · tracing the approach to the relay';if(!this.intro)this.message=`Commander: Ground swarm inbound. Stop the ${FINAL_BOSSES[this.mission?.mode]||'final threat'} before it reaches the relay.`;this.hud.update();return;}
     const before=this.battle.state;
     this.battle.update(dt);
+    if(before==='WAVE_ACTIVE'&&this.battle.state==='PREP')this.message=`Wave ${this.battle.wave-1} cleared. +${20+(this.battle.wave-1)*12} cash. Prepare for wave ${this.battle.wave}.`;
     if(before!==this.battle.state&&this.terminal){
       this.placing=false;
       this.ghost.visible=false;

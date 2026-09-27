@@ -1259,4 +1259,5 @@ const roster=[
     "description": "Snow Cadet is a human slowing fire specialist. Slows normal enemies by 45%; bosses resist control."
   }
 ];
-export const TOWERS=Object.freeze(Object.fromEntries(roster.map(t=>[t.id,Object.freeze({...TOWER,...t})])));
+// Content ids stay stable so existing collections and saved loadouts still load.
+export const TOWERS=Object.freeze(Object.fromEntries(roster.map(t=>[t.id,Object.freeze({...TOWER,...t,name:t.sourceRole,description:t.description.replace(/^[^.]+ is a human /,`${t.sourceRole} is a `)})])));

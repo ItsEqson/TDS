@@ -5,12 +5,16 @@ export const MAPS = Object.freeze([
   {id:'frostline',name:'Frostline Depot',theme:'Frozen supply outpost',color:0x9bbfc7,path:[[-13,-6],[-8,-6],[-8,5],[-2,5],[-2,-5],[6,-5],[6,6],[12,6]].map(([x,z])=>({x,z})),brief:'Ground swarm detected. A long supply route with tight turns.',length:67,space:'Central corridor',hazard:'Low visibility beyond the arena'}
 ]);
 export const MODES = Object.freeze([
-  {id:'survival',name:'Survival',detail:'Defend the relay against a ground swarm.',available:true},
-  {id:'challenge',name:'Challenge',detail:'Faster threats. 50% extra mission coins.',available:true},
-  {id:'fallen',name:'Fallen',detail:'Void zombies and a Rift Brute. Victory awards 50 shards.',available:true},
-  {id:'hardcore',name:'Hardcore / Voidcore',detail:'Faster void zombies and a stronger Rift Brute. Victory awards 50 shards.',available:true},
+  {id:'beginner',name:'Beginner',detail:'Short introduction. Final threat: the Brute.',available:true,category:'survival',waves:5,healthScale:1},
+  {id:'easy',name:'Easy',detail:'Growing groups. Final threat: the Grave Digger.',available:true,category:'survival',waves:8,healthScale:1.2},
+  {id:'intermediate',name:'Intermediate',detail:'Faster and sturdier enemies. Final threat: Patient Zero.',available:true,category:'survival',waves:10,healthScale:1.45},
+  {id:'molten',name:'Molten',detail:'Heat-charged enemies. Final threat: the Molten Warlord.',available:true,category:'survival',waves:12,healthScale:1.75},
+  {id:'fallen',name:'Fallen',detail:'Fallen enemies. Final threats: the Fallen Monarchs.',available:true,category:'survival',waves:15,healthScale:2.1},
+  {id:'hardcore',name:'Hardcore',detail:'A long void assault. Win to unlock Voidcore.',available:true,category:'hardcore',waves:20,healthScale:2.5},
+  {id:'voidcore',name:'Voidcore',detail:'The void returns with greater force.',available:true,category:'hardcore',waves:25,healthScale:3.2},
   ...['Story','Event','Sandbox'].map(name=>({id:name.toLowerCase(),name,detail:'Additional mission content in development.',available:false}))
 ]);
+export const FINAL_BOSSES=Object.freeze({beginner:'Brute',easy:'Grave Digger',intermediate:'Patient Zero',molten:'Molten Warlord',fallen:'Fallen Monarch',hardcore:'Void Reaver',voidcore:'The Void'});
 export const STATIONS = Object.freeze([
   {id:'missions',name:'DEPLOYMENT',x:0,z:-17,color:0x8cddcf},
   {id:'inventory',name:'ARMORY',x:-13,z:-12,color:0x9eabff},

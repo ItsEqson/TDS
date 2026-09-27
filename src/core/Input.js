@@ -11,10 +11,12 @@ export class Input {
     this.onLeave=this.onLeave.bind(this);
     this.onKey=this.onKey.bind(this);
     this.onContext=this.onContext.bind(this);
+    this.onUp=this.onUp.bind(this);this.onBlur=this.onBlur.bind(this);this.keys=new Set();
     canvas.addEventListener('pointermove',this.onMove);
     canvas.addEventListener('pointerdown',this.onDown);
     canvas.addEventListener('pointerleave',this.onLeave);
     canvas.addEventListener('keydown',this.onKey);
+    window.addEventListener('keyup',this.onUp);canvas.addEventListener('blur',this.onBlur);window.addEventListener('blur',this.onBlur);document.addEventListener('visibilitychange',this.onBlur);
     canvas.addEventListener('contextmenu',this.onContext);
   }
   onMove(e){
@@ -42,6 +44,7 @@ export class Input {
   }
   onKey(e){
     if(document.activeElement!==this.canvas||e.ctrlKey||e.metaKey||e.altKey)return;
+    if(Object.values(INPUT_MAP.walk).flat().includes(e.code)){e.preventDefault();this.keys.add(e.code);return;}
     let action=null;
     if(e.code===INPUT_MAP.cancel&&this.scene.canCancel())action='cancel';
     if(e.code===INPUT_MAP.start&&this.scene.battle.state==='PREP')action='start';
@@ -51,6 +54,9 @@ export class Input {
       if(!e.repeat)this.scene[action]();
     }
   }
+  onUp(e){this.keys.delete(e.code);}
+  onBlur(){this.keys.clear();}
+  axis(positive,negative){return Number(INPUT_MAP.walk[positive].some(k=>this.keys.has(k)))-Number(INPUT_MAP.walk[negative].some(k=>this.keys.has(k)));}
   onContext(e){
     if(this.scene.placing||this.scene.cancelledContext){
       e.preventDefault();
@@ -63,6 +69,7 @@ export class Input {
     c.removeEventListener('pointerdown',this.onDown);
     c.removeEventListener('pointerleave',this.onLeave);
     c.removeEventListener('keydown',this.onKey);
+    window.removeEventListener('keyup',this.onUp);c.removeEventListener('blur',this.onBlur);window.removeEventListener('blur',this.onBlur);document.removeEventListener('visibilitychange',this.onBlur);
     c.removeEventListener('contextmenu',this.onContext);
   }
 }

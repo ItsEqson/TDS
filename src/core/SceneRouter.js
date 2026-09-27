@@ -5,17 +5,17 @@ import { HeadquartersHud } from '../ui/HeadquartersHud.js';
 import { MAPS,OPERATION } from '../data/headquarters.js';
 import { Audio } from './Audio.js';
 export class SceneRouter {
-  constructor(canvas){this.canvas=canvas;this.store=new SaveStore();this.audio=new Audio();this.selection={map:'copper-reach',mode:'survival'};this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.width=1;this.height=1;this.kind='hq';this.onVisibility=()=>{if(document.hidden)this.audio.suspend();else this.audio.resume();};}
+  constructor(canvas){this.canvas=canvas;this.store=new SaveStore();this.audio=new Audio();this.selection={map:'copper-reach',mode:'beginner'};this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.width=1;this.height=1;this.kind='hq';this.pose=null;this.onVisibility=()=>{if(document.hidden)this.audio.suspend();else this.audio.resume();};}
   get map(){return MAPS.find(m=>m.id===this.selection.map)||MAPS[0];}
   init(){this.ui=new HeadquartersHud(this);}
   enter(){this.go('hq');document.addEventListener('visibilitychange',this.onVisibility);if(this.store.warning)this.ui.notify(this.store.warning);}
   go(kind){
-    this.ui.close();this.active?.exit();this.active?.dispose();this.kind=kind;
-    this.active=kind==='battle'?new BattleScene(this.canvas,this,this.mission):new LobbyScene(this.canvas,this,kind==='prep');
+    this.ui.close();if(this.active instanceof LobbyScene)this.pose={...this.active.pose};this.active?.exit();this.active?.dispose();this.kind=kind;
+    this.active=kind==='battle'?new BattleScene(this.canvas,this,this.mission):new LobbyScene(this.canvas,this,kind==='prep',this.pose);
     this.ui.show(kind);this.active.init();this.active.enter();this.active.resize(this.width,this.height);this.canvas.focus({preventScroll:true});
   }
-  prepare(){this.go('prep');this.ui.open('briefing');}
-  selectMap(id){if(!MAPS.some(m=>m.id===id)||this.deploying)return;this.selection.map=id;if(this.kind==='prep'){this.go('prep');this.ui.open('briefing');}}
+  prepare(){this.go('prep');}
+  selectMap(id){if(!MAPS.some(m=>m.id===id)||this.deploying)return;this.selection.map=id;if(this.kind==='prep')this.ui.open('briefing');}
   deploy(){
     if(this.deploying||this.kind!=='prep')return;
     if(!this.store.data.loadout.some(Boolean)){this.ui.notify('Equip at least one tower before deployment.');return;}
