@@ -30,14 +30,14 @@ await test('Income, healing, nonstacking support and friendly runners operate on
  const b=new WaveManager();b.towers=['supply-grower','field-mender','rally-officer','signal-captain','prism-sentry','contract-captain'].map((id,i)=>createTower(i,0,0,TOWERS[id]));b.health=5;const cash=b.cash;b.update(5);assert(b.cash===cash);b.start();for(let i=0;i<301;i++)b.update(1/60);assert(b.cash>=cash+12);assert(b.health>=6);assert(b.towers[4].attackBoost===1.25);assert(b.nextAllyId>0);
 });
 await test('Five upgrades improve live stats; selling returns 60% once',()=>{
- const b=new WaveManager();b.cash=5000;const placed=b.place(-4,0);assert(placed.ok);const t=placed.tower,base=towerStats(t);for(let i=0;i<5;i++){const cost=upgradeCost(t),cash=b.cash;assert(b.upgrade(t.id));assert(b.cash===cash-cost);}assert(t.level===5&&towerStats(t).damage>base.damage&&towerStats(t).range>base.range&&towerStats(t).intervalSeconds<base.intervalSeconds);assert(upgradeCost(t)===null&&!b.upgrade(t.id));const refund=Math.floor(t.invested*.6),cash=b.cash;assert(b.sell(t.id)===refund&&b.cash===cash+refund);assert(b.sell(t.id)===null);
+ const b=new WaveManager();b.cash=5000;const placed=b.place(-13,0);assert(placed.ok);const t=placed.tower,base=towerStats(t);for(let i=0;i<5;i++){const cost=upgradeCost(t),cash=b.cash;assert(b.upgrade(t.id));assert(b.cash===cash-cost);}assert(t.level===5&&towerStats(t).damage>base.damage&&towerStats(t).range>base.range&&towerStats(t).intervalSeconds<base.intervalSeconds);assert(upgradeCost(t)===null&&!b.upgrade(t.id));const refund=Math.floor(t.invested*.6),cash=b.cash;assert(b.sell(t.id)===refund&&b.cash===cash+refund);assert(b.sell(t.id)===null);
 });
 await test('Survival waves increase contacts and enemy health',()=>{
  const mission={path:MAPS[0].path,map:MAPS[0].id,mode:'beginner',loadout:['prism-sentry']},b=new WaveManager(mission);b.health=1000;b.start();b.update(1/60);const first=b.enemies[0].maxHealth,count=b.count;for(let i=0;i<10000&&b.state==='WAVE_ACTIVE';i++)b.update(1/60);assert(b.state==='PREP'&&b.wave===2);b.start();b.update(1/60);assert(b.count>count&&b.enemies[0].maxHealth>first);
 });
 await test('Beginner can be won with two Scouts and affordable upgrades',()=>{
  const b=new WaveManager({path:MAPS[0].path,map:MAPS[0].id,mode:'beginner',loadout:['prism-sentry']});
- assert(b.place(-4,0).ok&&b.place(3,0).ok);
+ assert(b.place(-13,0).ok&&b.place(-1,0).ok);
  for(let i=0;i<100000&&!['WON','LOST'].includes(b.state);i++){
    if(b.state==='PREP'){for(const t of b.towers)b.upgrade(t.id);b.start();}
    b.update(1/60);
@@ -51,7 +51,7 @@ await test('Hardcore victory persists the Voidcore unlock',()=>{
  assert(new SaveStore(storage).data.clearedModes.includes('hardcore'));
 });
 await test('Fallen / Voidcore complete, award shards, and reset all entities',()=>{
- for(const mode of ['fallen','hardcore','voidcore']){const mission={path:MAPS[0].path,map:MAPS[0].id,mode,loadout:['longwatch']};const b=new WaveManager(mission);b.cash=1000;b.health=1000;for(const x of [-4,3])assert(b.place(x,0,'longwatch').ok,'Placement '+x);for(let i=0;i<100000&&!['WON','LOST'].includes(b.state);i++){if(b.state==='PREP')b.start();b.update(1/60);}assert(b.state==='WON',mode+' '+b.state+' wave '+b.wave);const s=new SaveStore({getItem:()=>null,setItem:()=>{}});s.complete(b,mission);assert(s.data.shards===50);b.restart();assert(!b.allies.length&&!b.towers.length&&!b.enemies.length);}
+ for(const mode of ['fallen','hardcore','voidcore']){const mission={path:MAPS[0].path,map:MAPS[0].id,mode,loadout:['longwatch']};const b=new WaveManager(mission);b.cash=1000;b.health=1000;for(const x of [-13,-1,15])assert(b.place(x,0,'longwatch').ok,'Placement '+x);for(let i=0;i<100000&&!['WON','LOST'].includes(b.state);i++){if(b.state==='PREP')b.start();b.update(1/60);}assert(b.state==='WON',mode+' '+b.state+' wave '+b.wave);const s=new SaveStore({getItem:()=>null,setItem:()=>{}});s.complete(b,mission);assert(s.data.shards===50);b.restart();assert(!b.allies.length&&!b.towers.length&&!b.enemies.length);}
 });
 await test('Character and zombie geometry renders, then releases all resources',()=>{
  const renderer=new THREE.WebGLRenderer();renderer.setSize(900,380);document.querySelector('#gallery').append(renderer.domElement);const scene=new THREE.Scene();scene.background=new THREE.Color(0x172d38);scene.add(new THREE.HemisphereLight(0xffffff,0x65798a,3));const camera=new THREE.PerspectiveCamera(40,900/380,.1,100);camera.position.set(5,5,13);camera.lookAt(0,1,0);

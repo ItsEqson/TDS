@@ -1,8 +1,10 @@
 import { WAYPOINTS } from './arena.js';
 export const WALK = Object.freeze({ speed:6, turnSpeed:1.7, sensitivity:.004, radius:.45, eyeHeight:2.2, bound:21 });
 export const MAPS = Object.freeze([
-  {id:'copper-reach',name:'Copper Reach',theme:'Highland relay',color:0x507c70,path:WAYPOINTS,brief:'Ground swarm detected. Hold the winding relay road.',length:64,space:'Wide inner bends',hazard:'None'},
-  {id:'frostline',name:'Frostline Depot',theme:'Frozen supply outpost',color:0x9bbfc7,path:[[-13,-6],[-8,-6],[-8,5],[-2,5],[-2,-5],[6,-5],[6,6],[12,6]].map(([x,z])=>({x,z})),brief:'Ground swarm detected. A long supply route with tight turns.',length:67,space:'Central corridor',hazard:'Low visibility beyond the arena'}
+  {id:'copper-reach',name:'Copper Reach',theme:'Highland relay',color:0x50b694,path:WAYPOINTS,brief:'A winding road crosses the highland relay.',space:'Wide inner bends',hazard:'None'},
+  {id:'frostline',name:'Frostline Depot',theme:'Frozen supply outpost',color:0x9bbfc7,path:[[-26,-13],[-15,-13],[-15,13],[-2,13],[-2,-11],[12,-11],[12,12],[24,12]].map(([x,z])=>({x,z})),brief:'A long supply route with tight turns.',space:'Central corridor',hazard:'Low visibility beyond the arena'},
+  {id:'ember-pass',name:'Ember Pass',theme:'Red rock canyon',color:0xc98961,path:[[-26,12],[-19,12],[-19,-12],[-8,-12],[-8,10],[5,10],[5,-10],[17,-10],[17,12],[24,12]].map(([x,z])=>({x,z})),brief:'Hold a switchback through warm canyon stone.',space:'Several broad plateaus',hazard:'Long final approach'},
+  {id:'verdant-loop',name:'Verdant Loop',theme:'Overgrown observatory',color:0x63ae7c,path:[[-26,-12],[-15,-12],[-15,10],[-2,10],[-2,-10],[12,-10],[12,11],[24,11]].map(([x,z])=>({x,z})),brief:'Protect the observatory along its long garden road.',space:'Open center',hazard:'Dense outer foliage'}
 ]);
 export const MODES = Object.freeze([
   {id:'beginner',name:'Beginner',detail:'Short introduction. Final threat: the Brute.',available:true,category:'survival',waves:5,healthScale:1},

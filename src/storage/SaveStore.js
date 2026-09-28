@@ -2,7 +2,8 @@ import { SPECIALIST as S } from '../data/specialists.js';
 import { TOWERS } from '../data/towers.js';
 import { ECONOMY } from '../data/headquarters.js';
 const KEY='copper-reach-profile-v1';
-const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:['prism-sentry'],loadout:['prism-sentry',null,null],skins:['standard'],skin:'standard',crates:0,tickets:1,claims:[],loginDay:'',loginCount:0,codes:[],records:{},clearedModes:[],secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
+const STARTERS=['prism-sentry','longwatch','blast-courier'];
+const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:[...STARTERS],loadout:[...STARTERS],skins:['standard'],skin:'standard',crates:0,tickets:1,claims:[],loginDay:'',loginCount:0,tutorialSeen:false,codes:[],records:{},clearedModes:[],secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
 // Profile mutations and persistence have one owner. Invalid saves recover field by field.
 export class SaveStore {
   constructor(storage){
@@ -17,15 +18,16 @@ export class SaveStore {
     for(const key of ['shards','coins','xp','wins','kills','played','missions','crates','tickets','loginCount','flawless'])if(Number.isFinite(raw[key])&&raw[key]>=0)p[key]=Math.min(raw[key],1e9);
     for(const key of ['claims','codes'])if(Array.isArray(raw[key]))p[key]=raw[key].filter(x=>typeof x==='string').slice(0,1000);
     if(Array.isArray(raw.clearedModes))p.clearedModes=[...new Set(raw.clearedModes.filter(x=>typeof x==='string'))];
-    p.owned=[...new Set(['prism-sentry',...(Array.isArray(raw.owned)?raw.owned.filter(id=>Object.hasOwn(TOWERS,id)):[])])];
+    p.owned=[...new Set([...STARTERS,...(Array.isArray(raw.owned)?raw.owned.filter(id=>Object.hasOwn(TOWERS,id)):[])])];
     p.skins=['standard',...['amber','violet'].filter(x=>Array.isArray(raw.skins)&&raw.skins.includes(x))];
     p.skin=p.skins.includes(raw.skin)?raw.skin:'standard';
     const used=new Set();p.loadout=Array.from({length:3},(_,i)=>{const id=raw.loadout?.[i];if(!p.owned.includes(id)||used.has(id))return null;used.add(id);return id;});
+    p.tutorialSeen=raw.tutorialSeen===true;
     if(typeof raw.loginDay==='string')p.loginDay=raw.loginDay;
     p.secret=raw.secret===true;
     for(const [kind,key] of [['daily','missions'],['weekly','kills']]){const r=raw[kind];if(r&&typeof r.period==='string'&&Number.isFinite(r[key])&&r[key]>=0)p[kind]={period:r.period,[key]:r[key],claimed:r.claimed===true};}
     for(const id of p.owned)if(Number.isFinite(raw.mastery?.[id])&&raw.mastery[id]>=0)p.mastery[id]=raw.mastery[id];
-    for(const id of ['copper-reach','frostline']){const r=raw.records?.[id];if(r&&Number.isFinite(r.best)&&r.best>0&&Number.isFinite(r.wins)&&r.wins>=0)p.records[id]={best:r.best,wins:r.wins};}
+    for(const id of ['copper-reach','frostline','ember-pass','verdant-loop']){const r=raw.records?.[id];if(r&&Number.isFinite(r.best)&&r.best>0&&Number.isFinite(r.wins)&&r.wins>=0)p.records[id]={best:r.best,wins:r.wins};}
     return p;
   }
   save(){try{this.storage?.setItem(KEY,JSON.stringify(this.data));this.dirty=false;}catch{this.warning='Storage is full or disabled. Progress is session-only.';}}
@@ -38,6 +40,7 @@ export class SaveStore {
   tick(dt){this.data.played+=dt;this.saveClock+=dt;if(this.saveClock>=15){this.saveClock=0;this.refreshPeriods();this.save();}}
   equip(id,slot){return this.change(p=>{if(slot<0||slot>2||!p.owned.includes(id))return false;const old=p.loadout.indexOf(id),replaced=p.loadout[slot];if(old>=0)p.loadout[old]=replaced;p.loadout[slot]=id;return true;});}
   unequip(slot){this.change(p=>{if(slot>=0&&slot<3)p.loadout[slot]=null;});}
+  markTutorialSeen(){this.change(p=>{p.tutorialSeen=true;});}
   buy(kind){return this.change(p=>{
     const tower=Object.hasOwn(TOWERS,kind)?TOWERS[kind]:null;const currency=tower?.currency||'coins';
     const price=tower?tower.unlockPrice:kind==='crate'?ECONOMY.cratePrice:ECONOMY.skinPrice;
@@ -54,7 +57,7 @@ export class SaveStore {
     p.claims.push(id);p.coins+=item[1];return `Claimed ${item[1]} coins.`;
   });}
   openCrate(){return this.change(p=>{if(!p.crates)return null;p.crates--;const id=Math.random()<.7?'amber':'violet';if(p.skins.includes(id)){p.coins+=50;return {id,duplicate:true};}p.skins.push(id);return {id,duplicate:false};});}
-  spin(){return this.change(p=>{if(!p.tickets)return 'No spin tickets remaining.';p.tickets--;const coins=[25,40,60,100][Math.floor(Math.random()*4)];p.coins+=coins;return `Wheel reward: ${coins} coins.`;});}
+  spin(){return this.change(p=>{if(!p.tickets)return null;p.tickets--;const index=Math.floor(Math.random()*4),coins=[25,40,60,100][index];p.coins+=coins;return {index,coins,message:`Wheel reward: ${coins} coins.`};});}
   redeem(value){return this.change(p=>{const code=value.trim().toUpperCase();if(p.codes.includes(code))return 'Already used.';if(code==='OLDRELAY')return 'This code has expired.';if(code!=='FIRSTLIGHT')return 'Invalid code.';p.codes.push(code);p.coins+=100;p.tickets++;return 'Success: 100 coins and 1 spin ticket.';});}
   setSkin(id){this.change(p=>{if(p.skins.includes(id))p.skin=id;});}
   discover(){this.change(p=>{if(!p.secret){p.secret=true;p.coins+=30;}});}

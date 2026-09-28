@@ -36,15 +36,15 @@ test('Fresh battle and guarded start/restart',()=>{
 });
 test('Placement rejects road, rounded corners, arena exterior and footprint at edge',()=>{
   for(const p of WAYPOINTS)assert(placementReason(p.x,p.z,[],200));
-  assert(placementReason(30,0,[],200));
-  assert(placementReason(13.5,0,[],200));
+  assert(placementReason(60,0,[],200));
+  assert(placementReason(27.5,0,[],200));
   assert(placementReason(NaN,0,[],200));
-  assert(!placementReason(-3,0,[],200));
+  assert(!placementReason(-13,0,[],200));
 });
 test('Placement charges once, rejects overlap and insufficient funds without mutation',()=>{
   const b=new WaveManager();
-  assert(b.place(-3,0).ok&&b.cash===100);
-  assert(!b.place(-3,0).ok&&b.cash===100&&b.towers.length===1);
+  assert(b.place(-13,0).ok&&b.cash===100);
+  assert(!b.place(-13,0).ok&&b.cash===100&&b.towers.length===1);
   assert(b.place(4,0).ok&&b.cash===0);
   assert(!b.place(-10,7).ok&&b.cash===0&&b.towers.length===2);
 });
@@ -99,7 +99,7 @@ test('Wave spawns exactly ten at the configured fixed interval',()=>{
 });
 test('One inner-bend sentry damages, visibly signals shots, kills all ten and wins',()=>{
   const b=new WaveManager();
-  b.place(-3,0);
+  assert(b.place(-13,0).ok);
   b.start();
   let hurt=false,shot=false;
   for(let i=0;i<7200&&b.state==='WAVE_ACTIVE';i++){
@@ -122,7 +122,7 @@ test('Undefended run loses with exactly ten base hits, no double resolution',()=
 });
 test('Win is terminal and cannot occur before all ten spawns',()=>{
   const b=new WaveManager();
-  b.place(-3,0);
+  b.place(-13,0);
   b.start();
   for(let i=0;i<300;i++)b.update(1/60);
   assert(b.state==='WAVE_ACTIVE'&&b.spawned<10);
@@ -135,7 +135,7 @@ test('Win is terminal and cannot occur before all ten spawns',()=>{
 test('Three consecutive restart cycles restore every battle resource',()=>{
   const b=new WaveManager();
   for(let cycle=0;cycle<3;cycle++){
-    if(cycle%2===0)b.place(-3,0);
+    if(cycle%2===0)b.place(-13,0);
     b.start();
     finish(b);
     assert(b.restart());

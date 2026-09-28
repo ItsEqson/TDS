@@ -1,5 +1,11 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
+## Active Work — First-Person Field and Preparation Hall (2026-09-28)
+
+The latest user request changes battle to a walkable first-person 3D view and replaces the shared staging geometry with a distinct preparation hall containing a map table, field armory, supplies, and a deployment portal. Copper Reach and Frostline are larger; Ember Pass and Verdant Loop add two long routes and distinct terrain colors. New profiles start with three equipped roles: Scout, Sniper, and Demoman; existing profiles receive the starter ownership while custom loadouts remain intact. A four-page first-visit tutorial explains headquarters, staging, battle, and rewards. Enemy hover reveals health; selected-tower upgrades appear beside the tower and show affordability. The reward screen shows a seven-visit daily track and a four-segment wheel whose pointer matches the granted reward. Tower scale, environment dressing, and beveled controls were enlarged and enriched.
+
+Browser verification: 12/12 logic, 10/10 roster, 13/13 headquarters, and 7/7 lifecycle checks. Live embedded-browser checks covered tutorial opening, the separate preparation hall, four-map selection, Ember Pass deployment, first-person placement, tower upgrade affordability, the daily reward wheel, and 390×844 / 844×390 layouts. Touch movement and drag-look passed simulated input checks; physical touch remains unverified.
+
 ## Active Work — Mode Staging, Waves and Tower Controls (2026-09-26)
 
 The latest user request advances the prototype to a mode category flow and multi-wave battles. Survival presents Beginner, Easy, Intermediate, Molten, and Fallen. Hardcore presents Start until a Hardcore victory unlocks Voidcore. Selecting a mode enters a walkable staging lobby, replacing the old small preparation room; map and loadout can change there before deployment. The commander appears and moves during battle. The mission entry control is centered near the bottom of headquarters.

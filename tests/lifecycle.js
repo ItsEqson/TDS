@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Game } from '../src/core/Game.js';
 import { BattleScene } from '../src/scenes/BattleScene.js';
+import { createEnemy } from '../src/gameplay/Enemy.js';
 const html=await (await fetch('/')).text();
 const fixture=new DOMParser().parseFromString(html,'text/html').querySelector('#game');
 fixture.querySelector('#loading').remove();
@@ -44,7 +45,7 @@ try{
     for(let cycle=0;cycle<3;cycle++){
       scene.place();
       scene.hasPoint=true;
-      scene.x=-3;
+      scene.x=-13;
       scene.z=0;
       scene.click();
       scene.start();
@@ -62,14 +63,24 @@ try{
       assert(added===initialListeners,'Duplicate listeners');
     }
   });
-  test('Resize contains the full arena at desktop and narrow aspect ratios',()=>{
+  test('First-person camera stays finite at desktop and narrow aspect ratios',()=>{
     for(const [w,h] of [[1280,550],[390,550],[652,300]]){
       scene.resize(w,h);
-      for(const x of [-14,14])for(const z of [-10,10]){
-        const p=new THREE.Vector3(x,0,z).project(scene.camera);
-        assert(Math.abs(p.x)<=.91&&Math.abs(p.y)<=.91,'Clipped arena');
-      }
+      assert(scene.camera.aspect===w/h&&Number.isFinite(scene.camera.position.x)&&Number.isFinite(scene.camera.position.z),'Invalid camera');
     }
+  });
+  test('Enemy hover exposes current health and clears on pointer exit',()=>{
+    const enemy=createEnemy(777),cameraPosition=scene.camera.position.clone(),cameraRotation=scene.camera.rotation.clone();
+    scene.battle.enemies.push(enemy);scene.camera.position.set(enemy.x+4,2.2,enemy.z);scene.camera.lookAt(enemy.x,1,enemy.z);scene.camera.updateMatrixWorld(true);scene.render(renderer,1);
+    const screen=new THREE.Vector3(enemy.x,1,enemy.z).project(scene.camera),r=scene.canvas.getBoundingClientRect();
+    scene.point(r.left+(screen.x+1)*r.width/2,r.top+(1-screen.y)*r.height/2);
+    assert(scene.hoveredEnemy===enemy&&!scene.hud.enemyTip.hidden&&scene.hud.enemyTip.textContent.includes('10 / 10 HP'),'Enemy health missing');
+    scene.pointerOutside();assert(scene.hud.enemyTip.hidden,'Hover remained after exit');
+    scene.battle.enemies.pop();scene.render(renderer,1);scene.camera.position.copy(cameraPosition);scene.camera.rotation.copy(cameraRotation);
+  });
+  test('Touch movement and drag-look steer the first-person camera',()=>{
+    const x=scene.walkX,yaw=scene.yaw;scene.input.touchDirections.set(99,'right');scene.update(.2);assert(scene.walkX>x,'Touch movement did not advance');scene.input.touchDirections.clear();
+    scene.input.touchLook={id:77,x:100,y:100,startX:100,startY:100,moved:false};scene.input.onMove({pointerId:77,clientX:140,clientY:110});assert(scene.yaw!==yaw&&scene.input.touchLook.moved,'Touch drag did not turn');scene.input.onPointerUp({pointerId:77,type:'pointercancel'});assert(scene.input.touchLook===null);scene.walkX=x;scene.yaw=yaw;
   });
   test('Keyboard focus guards and browser defaults follow active bindings',()=>{
     const canvas=renderer.domElement;
@@ -83,10 +94,10 @@ try{
     scene.place();const cancel=key('Escape');canvas.dispatchEvent(cancel);
     assert(!scene.placing&&cancel.defaultPrevented&&scene.battle.cash===200,'Escape cancellation');
     const context=new MouseEvent('contextmenu',{cancelable:true});canvas.dispatchEvent(context);
-    assert(!context.defaultPrevented,'Escape consumed later context menu');
+    assert(context.defaultPrevented,'Focused right-look opened browser menu');
     scene.place();canvas.dispatchEvent(new PointerEvent('pointerdown',{button:2,cancelable:true}));
     const activeContext=new MouseEvent('contextmenu',{cancelable:true});canvas.dispatchEvent(activeContext);
-    assert(!scene.placing&&activeContext.defaultPrevented,'Right-click cancellation');
+    assert(scene.placing&&activeContext.defaultPrevented,'Right-drag look availability');scene.cancel();
     const start=key('Space');canvas.dispatchEvent(start);
     assert(scene.battle.state==='WAVE_ACTIVE'&&start.defaultPrevented,'Focused start');
   });

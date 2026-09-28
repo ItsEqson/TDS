@@ -8,7 +8,7 @@ const button=(action,label,value='',disabled=false)=>`<button data-hq="${action}
 const card=(title,body)=>`<article class="hq-card"><h3>${title}</h3>${body}</article>`;
 export class HeadquartersHud {
   constructor(app){
-    this.app=app;this.root=document.querySelector('#headquarters');this.dialog=document.querySelector('#hq-dialog');this.content=document.querySelector('#panel-content');this.toast=document.querySelector('#toast');this.panel='';this.filter='All';this.slot=0;this.tower='prism-sentry';this.clock=0;
+    this.app=app;this.root=document.querySelector('#headquarters');this.dialog=document.querySelector('#hq-dialog');this.content=document.querySelector('#panel-content');this.toast=document.querySelector('#toast');this.panel='';this.filter='All';this.slot=0;this.tower='prism-sentry';this.clock=0;this.tutorialStep=0;this.wheelAngle=0;
     this.onClick=this.onClick.bind(this);this.onKey=this.onKey.bind(this);this.onCancel=this.onCancel.bind(this);this.onChange=this.onChange.bind(this);
     this.feedback=document.createElement('p');this.feedback.id='panel-feedback';this.feedback.hidden=true;this.feedback.setAttribute('role','status');this.content.before(this.feedback);
     this.root.addEventListener('click',this.onClick);this.dialog.addEventListener('click',this.onClick);this.dialog.addEventListener('cancel',this.onCancel);this.dialog.addEventListener('change',this.onChange);document.addEventListener('keydown',this.onKey);
@@ -33,17 +33,25 @@ export class HeadquartersHud {
   onCancel(e){e.preventDefault();this.close();}
   onKey(e){if(e.code==='Escape'&&this.isOpen){e.preventDefault();this.close();}}
   onChange(e){if(e.target.id==='roster-filter'){this.filter=e.target.value;this.draw();return;}if(e.target.id==='reduced-motion')this.app.reducedMotion=e.target.checked;if(e.target.id==='audio-volume')this.app.audio.setVolume(Number(e.target.value));}
-  close(){if(this.dialog.open)this.dialog.close();this.panel='';this.previewBox=null;this.app.active?.input?.clear?.();this.app.canvas.focus({preventScroll:true});}
+  close(){if(this.panel==='tutorial'&&!this.p.tutorialSeen)this.app.store.markTutorialSeen();if(this.dialog.open)this.dialog.close();this.panel='';this.previewBox=null;this.app.active?.input?.clear?.();this.app.canvas.focus({preventScroll:true});}
   open(panel){
     if(this.app.deploying)return;this.feedback.hidden=true;this.app.active?.input?.clear?.();this.panel=panel;this.draw();if(!this.dialog.open)this.dialog.showModal();this.dialog.querySelector('button')?.focus();
   }
   draw(){
     this.previewBox=null;
-    document.querySelector('#panel-title').textContent=({inventory:'Tower inventory',towerDetail:'Tower inspection',shop:'Requisitions',missions:'Mission command',survivalModes:'Survival modes',hardcoreModes:'Hardcore',briefing:'Staging controls',quests:'Operations board',rewards:'Rewards & progression',crates:'Salvage bay',index:'Field archive',trophies:'Hall of records',settings:'Accessibility'})[this.panel]||this.panel;
+    document.querySelector('#panel-title').textContent=({tutorial:'How to play',inventory:'Tower inventory',towerDetail:'Tower inspection',shop:'Requisitions',missions:'Mission command',survivalModes:'Survival modes',hardcoreModes:'Hardcore',briefing:'Staging controls',quests:'Operations board',rewards:'Rewards & progression',crates:'Salvage bay',index:'Field archive',trophies:'Hall of records',settings:'Accessibility'})[this.panel]||this.panel;
     const p=this.p;
     const reward=(id,title,detail,ready)=>card(title,`<p>${detail}</p>${button('claim',(id==='daily'||id==='weekly'?p[id].claimed:p.claims.includes(id))?'Claimed':'Claim reward',id,!ready||(id==='daily'||id==='weekly'?p[id].claimed:p.claims.includes(id)))}`);
     let html='';
-    if(this.panel==='inventory'){
+    if(this.panel==='tutorial'){
+      const pages=[
+        ['Explore headquarters','Walk with WASD. Drag the world to look around. Approach a glowing station and press E, or use the station buttons. Open Inventory to see your three starting defenders.'],
+        ['Prepare your mission','Choose mission at the bottom of headquarters. Pick a difficulty to enter the separate preparation hall. At its map table, choose a route; at the armory, adjust your three tower slots. Deploy when ready.'],
+        ['Defend in first person','Walk with WASD and right-drag to look. Select a tower from the bottom tray, then click clear ground beside the road. Green means valid; red means blocked. Press Space to launch each wave.'],
+        ['Upgrade and claim','Click a placed tower to see its upgrade next to it. A bright upgrade button means you can afford it. Hover an enemy to read its health. After the battle, return to headquarters and open Rewards to view daily tasks and spin tickets.']
+      ],page=pages[this.tutorialStep];
+      html=`<div class="tutorial"><span class="eyebrow">FIELD GUIDE / ${this.tutorialStep+1} OF ${pages.length}</span><h3>${page[0]}</h3><p>${page[1]}</p><div class="tutorial-progress">${pages.map((_,i)=>`<span class="${i===this.tutorialStep?'active':''}"></span>`).join('')}</div><div class="panel-actions">${this.tutorialStep?button('tutorial-prev','← Back'):''}${this.tutorialStep<pages.length-1?button('tutorial-next','Next →'):button('close','Start exploring ✓')}</div></div>`;
+    }else if(this.panel==='inventory'){
       html=`<p class="panel-intro">${p.owned.length} / ${Object.keys(TOWERS).length} towers owned · Current skin: ${SKINS[p.skin].name}. Select a card to view its 3D model and details.</p><label>Collection category<select id="roster-filter">${['All',...new Set(Object.values(TOWERS).map(t=>t.tier))].map(t=>`<option ${t===this.filter?'selected':''}>${t}</option>`).join('')}</select></label><div class="inventory-cards">${Object.values(TOWERS).filter(t=>this.filter==='All'||t.tier===this.filter).map(t=>button('tower',`${portrait(t.id)}<strong>${t.name}</strong><small>${SKINS[p.skin].name} · ${p.owned.includes(t.id)?'Owned':'Locked'} · ${t.role}</small>`,t.id)).join('')}</div><h3>Equipped loadout</h3><div class="briefing-loadout">${p.loadout.map((id,i)=>button('select-slot',`${i+1}. ${id?TOWERS[id].name:'Empty'}${this.slot===i?' · Selected':''}`,i)).join('')}</div>`;
     }else if(this.panel==='towerDetail'){
       const t=TOWERS[this.tower],owned=p.owned.includes(t.id);
@@ -60,7 +68,8 @@ export class HeadquartersHud {
       const m=this.app.map,r=p.records[m.id];
       html=`<p class="panel-intro">${MODES.find(x=>x.id===this.app.selection.mode)?.name} · ${m.theme} / ${m.brief}</p><div class="card-grid">${MAPS.map(m=>card(m.name,`<p>${m.theme} · 1 lane · Ground placement</p><p>${m.space} · ${m.hazard}</p>${button('map',this.app.selection.map===m.id?'Selected ✓':'Select map',m.id)}`)).join('')}</div><div class="briefing-summary"><div><h3>${m.name}</h3><p>Path ${Math.round(m.path.slice(1).reduce((n,b,i)=>n+Math.hypot(b.x-m.path[i].x,b.z-m.path[i].z),0))} m · No cliffs</p><p>Best clear: ${r?r.best.toFixed(1)+' s':'Uncleared'} · Wins ${r?.wins||0}</p></div><div><h3>Equipped towers</h3><p>Select a slot to change the loadout before deployment.</p></div></div><div class="briefing-loadout">${p.loadout.map((id,i)=>button('slot',`${portrait(id)}${i+1} · ${id?TOWERS[id].name+' / '+SKINS[p.skin].name:'Choose tower'}`,i)).join('')}</div><div class="panel-actions">${button('open','Edit inventory','inventory')}${button('deploy','Deploy →','',!p.loadout.some(Boolean))}</div>`;
     }else if(this.panel==='rewards'){
-      html=`<div class="card-grid">${card('Daily login',`<p>Visit ${p.loginCount+1} · ${20+Math.min(p.loginCount+1,7)*10} coins. Resets at midnight UTC.</p>${button('claim',p.loginDay===new Date().toISOString().slice(0,10)?'Claimed today':'Claim login reward','login',p.loginDay===new Date().toISOString().slice(0,10))}`)}${reward('play','On-duty reward',`${Math.min(5,Math.floor(p.played/60))} / 5 active minutes · 40 coins`,p.played>=300)}${card('Supply wheel',`<p>${p.tickets} spin tickets · Equal chance of 25 / 40 / 60 / 100 coins</p><div class="reward-wheel ${this.spinTime?'spinning':''}">✦</div>${button('spin','Use 1 ticket','',!p.tickets||!!this.spinTime)}`)}${reward('season','First Signal · starter track',`${p.xp} / 100 XP · 80 coins. Earn XP by completing missions.`,p.xp>=100)}${reward('season2','First Signal · tier 2',`${p.xp} / 250 XP · 120 coins`,p.xp>=250)}${reward('season3','First Signal · tier 3',`${p.xp} / 500 XP · 200 coins`,p.xp>=500)}${card('Promotional codes',`<label for="code-input">Code</label><input id="code-input" maxlength="32" placeholder="Try FIRSTLIGHT" autocomplete="off">${button('code','Redeem code')}<p id="code-result" role="status"></p>`)}</div>`;
+      const today=new Date().toISOString().slice(0,10),claimed=p.loginDay===today;
+      html=`<p class="panel-intro">Daily rewards and assignments reset at midnight UTC. Claim each reward when it is ready.</p><div class="daily-track">${Array.from({length:7},(_,i)=>`<div class="daily-day ${i===Math.min(p.loginCount,6)?'today':''}"><small>VISIT ${i+1}</small><strong>${20+(i+1)*10}</strong><span>coins</span></div>`).join('')}</div><div class="card-grid">${card('Today’s login reward',`<p>${claimed?'Claimed today':'Ready to claim'} · ${20+Math.min(p.loginCount+1,7)*10} coins</p>${button('claim',claimed?'Claimed today':'Claim today’s coins','login',claimed)}`)}${reward('daily','Daily assignment',`${Math.min(p.daily.missions,1)} / 1 mission completed today · 40 coins`,p.daily.missions>=1)}${reward('weekly','Weekly assignment',`${p.weekly.kills} / 50 contacts defeated · 100 coins`,p.weekly.kills>=50)}${card('Supply wheel',`<p>${p.tickets} spin tickets · the pointer awards the segment it lands on.</p><div class="wheel-wrap"><div class="wheel-pointer">▼</div><div class="reward-wheel" style="transform:rotate(${this.wheelAngle}deg)"><span>25</span><span>40</span><span>60</span><span>100</span></div></div><p class="wheel-result" role="status">${this.spinResult&&!this.spinTime?this.spinResult.message:'25 · 40 · 60 · 100 coins'}</p>${button('spin','Use 1 ticket','',!p.tickets||!!this.spinTime)}`)}${reward('play','On-duty reward',`${Math.min(5,Math.floor(p.played/60))} / 5 active minutes · 40 coins`,p.played>=300)}${reward('season','First Signal · starter track',`${p.xp} / 100 XP · 80 coins. Earn XP by completing missions.`,p.xp>=100)}${reward('season2','First Signal · tier 2',`${p.xp} / 250 XP · 120 coins`,p.xp>=250)}${reward('season3','First Signal · tier 3',`${p.xp} / 500 XP · 200 coins`,p.xp>=500)}${card('Promotional codes',`<label for="code-input">Code</label><input id="code-input" maxlength="32" placeholder="Try FIRSTLIGHT" autocomplete="off">${button('code','Redeem code')}<p id="code-result" role="status"></p>`)}</div>`;
     }else if(this.panel==='quests'){
       html=`<p class="panel-intro">Daily and weekly assignments · complete battles to advance. Daily reset: midnight UTC. Weekly reset: Monday UTC.</p><div class="card-grid">${reward('daily','First deployment',`${Math.min(p.daily.missions,1)} / 1 completed missions today · 40 coins`,p.daily.missions>=1)}${reward('weekly','Clear the signal',`${p.weekly.kills} / 50 enemies defeated this week · 100 coins`,p.weekly.kills>=50)}${reward('achievement','Relay guardian',`${p.wins} victories · Win a mission to earn 60 coins and a headquarters trophy.`,p.wins>=1)}</div>`;
     }else if(this.panel==='crates'){
@@ -86,6 +95,8 @@ export class HeadquartersHud {
     this.app.audio.play('ui');
     switch(action){
       case 'close':this.close();return;
+      case 'tutorial-next':this.tutorialStep=Math.min(3,this.tutorialStep+1);this.draw();return;
+      case 'tutorial-prev':this.tutorialStep=Math.max(0,this.tutorialStep-1);this.draw();return;
       case 'open':this.open(value);return;
       case 'interact':this.app.active.interact();return;
       case 'hq':this.app.go('hq');return;
@@ -104,11 +115,12 @@ export class HeadquartersHud {
       case 'skin':this.app.store.setSkin(value);this.previewSkin=null;this.notify('Skin equipped.');break;
       case 'buy':this.notify(this.app.store.buy(value));break;
       case 'claim':this.notify(this.app.store.claim(value));break;
-      case 'spin':if(this.spinTime)return;this.spinResult=this.app.store.spin();this.spinTime=this.app.reducedMotion?.05:1.6;break;
+      case 'spin':if(this.spinTime||!this.p.tickets)return;this.spinResult=this.app.store.spin();this.spinTime=this.app.reducedMotion?.05:2.2;break;
       case 'crate':if(this.crateTime)return;this.crateResult=this.app.store.openCrate();if(this.crateResult)this.crateTime=this.app.reducedMotion?.05:2.3;break;
       case 'code':{const result=this.app.store.redeem(document.querySelector('#code-input').value);document.querySelector('#code-result').textContent=result;this.notify(result);return;}
     }
     if(this.isOpen)this.draw();
+    if(action==='spin'&&this.spinResult?.index!==undefined){const wheel=this.content.querySelector('.reward-wheel');if(wheel){const previous=this.wheelAngle,target=previous+1800+((360-this.spinResult.index*90-previous%360+360)%360);requestAnimationFrame(()=>{wheel.style.transition=this.app.reducedMotion?'none':'transform 2.2s cubic-bezier(.14,.7,.14,1)';wheel.style.transform=`rotate(${target}deg)`;});this.wheelAngle=target;}}
   }
   update(dt){
     this.clock+=dt;if(this.clock>1){this.clock=0;this.refreshBar();}
@@ -116,7 +128,7 @@ export class HeadquartersHud {
     if(this.model&&!this.app.reducedMotion)this.model.rotation.y+=dt*.35;
     if(this.lid&&this.crateTime){const reveal=1-this.crateTime/2.3;this.lid.position.y=1.35+Math.max(0,reveal-.35)*2;this.lid.rotation.z=Math.sin(reveal*30)*.04;}
     if(this.crateTime){this.crateTime-=dt;if(this.crateTime<=0){this.crateTime=0;if(this.panel==='crates')this.draw();this.app.audio.play('reward');this.notify('Salvage decoded: '+SKINS[this.crateResult.id].name);}}
-    if(this.spinTime){this.spinTime-=dt;if(this.spinTime<=0){this.spinTime=0;if(this.panel==='rewards')this.draw();this.notify(this.spinResult);}}
+    if(this.spinTime){this.spinTime-=dt;if(this.spinTime<=0){this.spinTime=0;if(this.panel==='rewards')this.draw();this.notify(this.spinResult.message);}}
   }
   renderPreview(renderer){
     if(!this.previewBox||!this.isOpen)return;

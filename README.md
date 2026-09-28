@@ -32,25 +32,25 @@ Open [the game](http://localhost:8000/). Internet access to the pinned jsDelivr 
 
 You arrive in a first-person headquarters. Walk with **WASD**, look with **arrow keys** or by dragging the world, and use **E** near a station. On touchscreens, hold the direction buttons while dragging the world with another finger. Every major station also has a menu shortcut. **Escape** closes panels; native dialog focus keeps keyboard navigation inside them.
 
-Choose **Missions → Survival or Challenge** to enter the separate deployment chamber. Inspect its physical 3D map table, change between Copper Reach and Frostline Depot, edit or reorder the three-slot loadout, then **Lock loadout & deploy**. Selection remains immutable for that run. Empty loadouts cannot deploy.
+Choose **Missions → Survival or Hardcore** to enter the separate preparation hall. Its 3D map table, armory, and supplies frame the staging controls. Choose among Copper Reach, Frostline Depot, Ember Pass, and Verdant Loop, edit the three-slot loadout, then deploy. Selection remains immutable for that run. Empty loadouts cannot deploy.
 
-Battles use an elevated third-person tactical camera. Select a tower in the bottom hotbar, then click/tap valid terrain. Road, arena bounds, tower overlap and cost are validated in simulation. **Space** starts the encounter. Ten crawler drones are followed by the original **Bastion carrier**; a carrier breach destroys the relay. **R** restarts a terminal battle. Headquarters returns from any battle; abandoning an unfinished battle gives no mission reward.
+Battles use a first-person 3D camera. Walk with **WASD** and right-drag to look; on touchscreens, hold the movement pad and drag the world to turn. Select a tower in the bottom tray, then click/tap valid terrain. Road, arena bounds, tower overlap and cost are validated in simulation. Hover an enemy for its health; click a placed tower for its nearby upgrade panel. **Space** starts each wave, **Escape** cancels, and **R** restarts a terminal battle. Headquarters returns from any battle; abandoning an unfinished battle gives no mission reward.
 
-Two sentries at the inner bends are a viable opening. The Longwatch is a slower, longer-range alternative purchased with account coins. Battle cash and account coins are separate.
+New profiles start with Scout, Sniper, and Demoman equipped. Two Scouts at different bends are a viable Beginner opening. Battle cash and account coins are separate.
 
 ## Included systems
 
 - Walkable procedural headquarters with station landmarks, collision, animated screens, a freight carrier, rotating tower displays, a secret log and a victory trophy.
-- Separate walkable briefing chamber, themed map table, two maps, two rulesets, locked deployment settings and a short camera introduction.
+- Separate walkable preparation hall, four longer maps, mode selection, locked deployment settings and a short camera introduction.
 - Owned/locked tower inventory, one rotating 3D inspection preview using the existing renderer, equip/unequip/swap, mastery XP and three cosmetic finishes.
-- Tower and skin purchases, cosmetic crates with a 3D reveal, duplicate compensation, ticket wheel and code redemption (`FIRSTLIGHT` is the starter code).
-- UTC daily login, daily/weekly quests, active-play reward, three starter progression tiers, achievements, field index, best clear times and wins.
+- Tower and skin purchases, cosmetic crates with a 3D reveal, duplicate compensation, a visible prize wheel and code redemption (`FIRSTLIGHT` is the starter code).
+- Four-page first-visit tutorial, visible seven-visit daily login track, UTC daily/weekly quests, active-play reward, three starter progression tiers, achievements, field index, best clear times and wins.
 - Versioned saved profile behind `SaveStore`. Missing, malformed or unavailable storage recovers safely. Browser storage is local to the chosen origin; localhost and 127.0.0.1 are separate profiles.
 - Reduced-motion setting and optional original synthesized machinery/interface audio, muted by default. These accessibility settings currently apply to the session.
 
 ## Scope limits
 
-This is a playable headquarters prototype, not the full brainstorm. Story, Hardcore, Event and Sandbox are visibly unavailable. Multi-wave campaigns, five combat upgrade levels, evolved models, larger enemy/tower rosters, emotes, consumables, rotating daily shop stock and story-driven room expansion remain unfinished. Mastery is tracked but does not grant combat upgrades. The starter progression track is permanent, not a timed live-service season. Cosmetics are shared finishes, not individual authored character skins.
+This is a playable headquarters prototype, not the full brainstorm. Story, Event and Sandbox are visibly unavailable. The named final bosses currently share procedural enemy models, and most specialist roles share prototype kits. Emotes, consumables, rotating daily shop stock, and story-driven expansion remain unfinished. The starter progression track is permanent, not a timed live-service season. Cosmetics are shared finishes, not individual authored character skins.
 
 ## Verification
 

@@ -8,6 +8,8 @@ import { Hud } from '../ui/Hud.js';
 import { TOWER,TOWERS } from '../data/towers.js';
 import { SKINS,OPERATION,FINAL_BOSSES } from '../data/headquarters.js';
 import { ENEMY } from '../data/enemies.js';
+import { ARENA } from '../data/arena.js';
+import { WALK } from '../data/headquarters.js';
 import { createWorld } from '../rendering/createWorld.js';
 import { createTowerMesh,createEnemyMesh,createRange,createBeam,disposeObject } from '../rendering/createMeshes.js';
 export class BattleScene {
@@ -25,24 +27,23 @@ export class BattleScene {
     this.enemyMeshes=new Map();this.allyMeshes=new Map();
     this.direction=new THREE.Vector3();
     this.up=new THREE.Vector3(0,1,0);
-    this.hasPoint=false;
+    this.hasPoint=false;this.yaw=0;this.pitch=-.22;this.hoveredEnemy=null;
   }
   init(){
     this.scene=new THREE.Scene();
     this.scene.background=new THREE.Color(0x182d35);
-    this.camera=new THREE.PerspectiveCamera(40,1,.1,250);
+    this.camera=new THREE.PerspectiveCamera(68,1,.1,250);this.camera.rotation.order='YXZ';
     const {
       terrain
     }
     =createWorld(this.scene,this.mission?.mapData);
     this.terrain=terrain;
     this.ghost=createTowerMesh(true,TOWERS[this.towerId]);this.ghostTowerId=this.towerId;
+    this.ghost.scale.setScalar(1.35);
     this.ghost.visible=false;
     this.scene.add(this.ghost);
-    this.commander=createTowerMesh(false,TOWERS['prism-sentry']);this.commander.scale.setScalar(.85);
-    this.commander.position.set(THREE.MathUtils.clamp(this.app?.pose?.x||0,-11,11),0,THREE.MathUtils.clamp(this.app?.pose?.z||7,-7,7));
-    if(this.mission?.skin&&this.mission.skin!=='standard')this.commander.traverse(o=>{if(o.material?.name==='uniform')o.material.color.setHex(SKINS[this.mission.skin].color);});
-    this.scene.add(this.commander);
+    this.walkX=0;this.walkZ=15;this.camera.position.set(this.walkX,WALK.eyeHeight,this.walkZ);
+    this.camera.rotation.set(this.pitch,this.yaw,0);
     this.range=createRange();
     this.scene.add(this.range);
     this.scene.updateMatrixWorld(true);
@@ -57,7 +58,7 @@ export class BattleScene {
   }
   place(){
     if(this.terminal)return;
-    if(this.ghostTowerId!==this.towerId){disposeObject(this.ghost);this.ghost=createTowerMesh(true,TOWERS[this.towerId]);this.scene.add(this.ghost);this.ghostTowerId=this.towerId;}
+    if(this.ghostTowerId!==this.towerId){disposeObject(this.ghost);this.ghost=createTowerMesh(true,TOWERS[this.towerId]);this.ghost.scale.setScalar(1.35);this.scene.add(this.ghost);this.ghostTowerId=this.towerId;}
     this.placing=true;
     this.selected=null;
     this.message='Move over terrain. ✓ Place here / × cannot place. Esc cancels.';
@@ -86,7 +87,7 @@ export class BattleScene {
     if(!this.selected)return;
     if(this.battle.upgrade(this.selected.id)){
       const model=this.towerMeshes.get(this.selected.id)?.model;
-      if(model)model.scale.setScalar(1+this.selected.level*.075);
+      if(model)model.scale.setScalar(1.35+this.selected.level*.1);
       this.showSelection();this.message=`${this.selected.definition.name} upgraded to level ${this.selected.level}.`;
     }else this.message='Upgrade unavailable or insufficient cash.';
     this.hud.update();
@@ -128,6 +129,13 @@ export class BattleScene {
     const r=this.canvas.getBoundingClientRect();
     this.pointer.set((clientX-r.left)/r.width*2-1,-(clientY-r.top)/r.height*2+1);
     this.raycaster.setFromCamera(this.pointer,this.camera);
+    this.hoveredEnemy=null;
+    let enemyDistance=Infinity;
+    for(const [id,model] of this.enemyMeshes){
+      const hit=this.raycaster.intersectObject(model,true)[0];
+      if(hit&&hit.distance<enemyDistance){this.hoveredEnemy=this.battle.enemies.find(e=>e.id===id)||null;enemyDistance=hit.distance;}
+    }
+    this.hud?.showEnemy(this.hoveredEnemy,clientX,clientY);
     this.hits.length=0;
     this.raycaster.intersectObject(this.terrain,false,this.hits);
     this.hasPoint=this.hits.length>0;
@@ -138,7 +146,7 @@ export class BattleScene {
     this.refreshPreview();
   }
   pointerOutside(){
-    this.hasPoint=false;
+    this.hasPoint=false;this.hoveredEnemy=null;this.hud?.showEnemy(null);
     this.refreshPreview();
   }
   refreshPreview(){
@@ -167,6 +175,7 @@ export class BattleScene {
       const result=this.battle.place(this.x,this.z,this.towerId);
       if(result.ok){
         const model=createTowerMesh(false,TOWERS[this.towerId]),beam=createBeam();
+        model.scale.setScalar(1.35);
 
         if(this.mission&&this.mission.skin!=='standard')model.traverse(o=>{if(o.material?.name==='uniform')o.material.color.setHex(SKINS[this.mission.skin].color);});
         model.position.set(result.tower.x,0,result.tower.z);
@@ -211,7 +220,12 @@ export class BattleScene {
     }
   }
   update(dt){
-    if(this.input&&!this.terminal){const dx=(this.input.axis?.('right','left')||0)*dt*5,dz=(this.input.axis?.('back','forward')||0)*dt*5;if(dx||dz){this.commander.position.x=THREE.MathUtils.clamp(this.commander.position.x+dx,-12,12);this.commander.position.z=THREE.MathUtils.clamp(this.commander.position.z+dz,-8,8);this.commander.rotation.y=Math.atan2(dx,dz);}}
+    if(this.input){const forward=this.input.axis('forward','back'),right=this.input.axis('right','left'),length=Math.hypot(forward,right)||1;
+      const speed=WALK.speed*dt/length;
+      this.walkX=THREE.MathUtils.clamp(this.walkX+(right*Math.cos(this.yaw)-forward*Math.sin(this.yaw))*speed,-ARENA.width/2+1,ARENA.width/2-1);
+      this.walkZ=THREE.MathUtils.clamp(this.walkZ+(-forward*Math.cos(this.yaw)-right*Math.sin(this.yaw))*speed,-ARENA.depth/2+1,ARENA.depth/2-1);
+      this.camera.position.set(this.walkX,WALK.eyeHeight,this.walkZ);this.camera.rotation.set(this.pitch,this.yaw,0);
+    }
     if(this.intro>0){this.intro=Math.max(0,this.intro-dt);this.message='Deployment flyover · tracing the approach to the relay';if(!this.intro)this.message=`Commander: Ground swarm inbound. Stop the ${FINAL_BOSSES[this.mission?.mode]||'final threat'} before it reaches the relay.`;this.hud.update();return;}
     const before=this.battle.state;
     this.battle.update(dt);
@@ -226,7 +240,7 @@ export class BattleScene {
     this.hud.update();
   }
   render(renderer,alpha){
-    if(this.restCamera){this.camera.position.copy(this.restCamera);if(this.intro>0){const t=this.intro/OPERATION.flyoverSeconds;this.camera.position.x+=Math.sin(t*Math.PI)*8;this.camera.position.y+=t*4;}this.camera.lookAt(0,.5,0);}
+    this.camera.position.y=WALK.eyeHeight+(this.intro>0?Math.sin(this.intro/OPERATION.flyoverSeconds*Math.PI)*2:0);
     for(const e of this.battle.enemies){
       let model=this.enemyMeshes.get(e.id);
       if(!model){
@@ -237,6 +251,7 @@ export class BattleScene {
       model.position.set(e.previousX+(e.x-e.previousX)*alpha,0,e.previousZ+(e.z-e.previousZ)*alpha);
       if(e.x!==e.previousX||e.z!==e.previousZ)model.rotation.y=Math.atan2(e.x-e.previousX,e.z-e.previousZ);
       if(e.boss)model.scale.setScalar(1.7);
+      model.userData.health.visible=this.hoveredEnemy?.id===e.id;
       model.userData.health.scale.x=e.health/e.maxHealth;
       model.userData.legs.forEach((leg,i)=>leg.rotation.x=Math.sin(e.progress*3+i*Math.PI)*.32);
     }
@@ -244,6 +259,7 @@ export class BattleScene {
       if(!this.battle.enemies.some(e=>e.id===id)){
         disposeObject(model);
         this.enemyMeshes.delete(id);
+        if(this.hoveredEnemy?.id===id){this.hoveredEnemy=null;this.hud?.showEnemy(null);}
       }
     }
     for(const t of this.battle.towers){
@@ -264,25 +280,14 @@ export class BattleScene {
     for(const [id,m] of this.allyMeshes)if(!this.battle.allies.some(a=>a.id===id)){disposeObject(m);this.allyMeshes.delete(id);}
     for(const t of this.battle.towers)if(t.shotId)this.towerMeshes.get(t.id).model.rotation.y=Math.atan2(t.targetX-t.x,t.targetZ-t.z);
     renderer.render(this.scene,this.camera);
+    this.hud?.positionTowerPanel();
   }
   resize(width,height){
     this.camera.aspect=width/height;
     this.camera.updateProjectionMatrix();
-    const corner=new THREE.Vector3();
-    for(let distance=28;distance<220;distance+=1){
-      this.camera.position.set(distance*.36,distance*.82,distance*.64);
-      this.camera.lookAt(0,.5,0);
-      this.camera.updateMatrixWorld();
-      let fits=true;
-      for(const x of [-14,14])for(const y of [-1.5,3])for(const z of [-10,10]){
-        corner.set(x,y,z).project(this.camera);
-        if(Math.abs(corner.x)>.91||Math.abs(corner.y)>.91)fits=false;
-      }
-      if(fits)break;
-    }
     this.pointerOutside();
-    this.restCamera=this.camera.position.clone();
   }
+  look(dx,dy){this.yaw-=dx;this.pitch=THREE.MathUtils.clamp(this.pitch-dy,-1.25,1.25);}
   chooseTower(id){if(!this.mission?.loadout.includes(id))return;this.towerId=id;this.place();}
   headquarters(){this.app?.go('hq');}
   exit(){

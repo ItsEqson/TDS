@@ -1,7 +1,7 @@
 export const ARENA = Object.freeze({
-  width: 28, depth: 20, roadWidth: 1.8
+  width: 56, depth: 40, roadWidth: 2.6
 });
-export const WAYPOINTS = Object.freeze([[-13,-6],[-7,-6],[-7,4],[0,4],[0,-4],[8,-4],[8,6],[12,6]].map(([x,z])=>Object.freeze({
+export const WAYPOINTS = Object.freeze([[-26,-13],[-17,-13],[-17,11],[-5,11],[-5,-9],[11,-9],[11,13],[24,13]].map(([x,z])=>Object.freeze({
   x,z
 })));
 export const SEGMENTS = Object.freeze(WAYPOINTS.slice(1).map((end,i)=>{
