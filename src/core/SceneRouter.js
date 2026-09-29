@@ -2,10 +2,12 @@ import { LobbyScene } from '../scenes/LobbyScene.js';
 import { BattleScene } from '../scenes/BattleScene.js';
 import { SaveStore } from '../storage/SaveStore.js';
 import { HeadquartersHud } from '../ui/HeadquartersHud.js';
-import { MAPS,OPERATION } from '../data/headquarters.js';
+import { MAPS,MODES,OPERATION } from '../data/headquarters.js';
 import { Audio } from './Audio.js';
 export class SceneRouter {
-  constructor(canvas){this.canvas=canvas;this.store=new SaveStore();this.audio=new Audio();this.selection={map:'copper-reach',mode:'beginner'};this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.width=1;this.height=1;this.kind='hq';this.pose=null;this.onVisibility=()=>{if(document.hidden)this.audio.suspend();else this.audio.resume();};}
+  constructor(canvas){this.canvas=canvas;this.store=new SaveStore();this.audio=new Audio();this.selection={map:'copper-reach',mode:'easy'};this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.fov=this.store.data.fov;this.zoom=0;this.width=1;this.height=1;this.kind='hq';this.pose=null;this.onVisibility=()=>{if(document.hidden)this.audio.suspend();else this.audio.resume();};}
+  setFov(value){this.fov=this.store.setFov(value);if(this.active?.camera){this.active.camera.fov=this.fov;this.active.camera.updateProjectionMatrix();}}
+  setZoom(value){this.zoom=Math.max(0,Math.min(12,value));document.body.classList.toggle('zoomed',this.zoom>1);this.active?.updateCamera?.();}
   get map(){return MAPS.find(m=>m.id===this.selection.map)||MAPS[0];}
   init(){this.ui=new HeadquartersHud(this);}
   enter(){this.go('hq');document.addEventListener('visibilitychange',this.onVisibility);if(!this.store.data.tutorialSeen)this.ui.open('tutorial');if(this.store.warning)this.ui.notify(this.store.warning);}
@@ -14,12 +16,16 @@ export class SceneRouter {
     this.active=kind==='battle'?new BattleScene(this.canvas,this,this.mission):new LobbyScene(this.canvas,this,kind==='prep',this.pose);
     this.ui.show(kind);this.active.init();this.active.enter();this.active.resize(this.width,this.height);this.canvas.focus({preventScroll:true});
   }
-  prepare(){this.go('prep');}
+  prepare(){const m=this.mode;if(!m||!this.canPlay(m)){this.ui.notify('This mode is locked. Check its level and victory requirements.');return;}this.go('prep');}
+  get mode(){return this.selection.mode&&this.modes.find(m=>m.id===this.selection.mode);}
+  get modes(){return MODES;}
+  canPlay(m){return m.available&&(this.store.level>= (m.requiredLevel||1))&&(m.id!=='voidcore'||this.store.data.clearedModes.includes('hardcore'));}
   selectMap(id){if(!MAPS.some(m=>m.id===id)||this.deploying)return;this.selection.map=id;if(this.kind==='prep'){this.active.setMap(this.map);this.ui.open('briefing');}}
   deploy(){
     if(this.deploying||this.kind!=='prep')return;
+    if(!this.canPlay(this.mode)){this.ui.notify('Mode requirements are not met.');return;}
     if(!this.store.data.loadout.some(Boolean)){this.ui.notify('Equip at least one tower before deployment.');return;}
-    this.mission=Object.freeze({...this.selection,path:this.map.path,loadout:Object.freeze([...this.store.data.loadout]),skin:this.store.data.skin,mapData:this.map});
+    this.mission=Object.freeze({...this.selection,path:this.map.path,loadout:Object.freeze([...this.store.data.loadout]),forms:Object.freeze({...this.store.data.forms}),skin:this.store.data.skin,mapData:this.map});
     this.ui.close();this.deploying=this.reducedMotion?.05:OPERATION.deploySeconds;this.ui.setDeploying(true);
     this.audio.play('deploy');
   }

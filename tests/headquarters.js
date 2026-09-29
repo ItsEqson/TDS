@@ -43,9 +43,15 @@ const html=new DOMParser().parseFromString(await(await fetch('/')).text(),'text/
 document.querySelector('#fixture').append(html.querySelector('#game'),html.querySelector('#hq-dialog'));document.querySelector('#loading').remove();
 const canvas=document.createElement('canvas');canvas.tabIndex=0;document.querySelector('#viewport').append(canvas);
 const renderer=new THREE.WebGLRenderer({canvas});renderer.setSize(960,600,false);
-const app=new SceneRouter(canvas);app.store=store;app.reducedMotion=true;app.init();app.enter();app.ui.close();app.resize(960,600);
+const app=new SceneRouter(canvas);app.store=store;app.selection.mode='beginner';app.reducedMotion=true;app.init();app.enter();app.ui.close();app.resize(960,600);
 test('Keyboard and multi-touch movement move, collide and clear on blur',()=>{
  const s=app.active;canvas.focus();const before=s.camera.position.z;canvas.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyW',bubbles:true,cancelable:true}));for(let i=0;i<30;i++)s.update(1/60);window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyW'}));assert(s.camera.position.z<before);for(let i=0;i<1000;i++){s.input.keys.add('KeyW');s.update(1/60);}assert(s.camera.position.z>-13,'Walked through terminal');window.dispatchEvent(new Event('blur'));assert(s.input.keys.size===0);s.input.touch.set(7,'right');const x=s.camera.position.x;s.update(.1);assert(s.camera.position.x>x);document.dispatchEvent(new Event('visibilitychange'));assert(s.input.touch.size===0);
+});
+test('FOV persists, zoom changes camera distance, and locked modes cannot stage',()=>{
+ app.setFov(90);assert(store.data.fov===90&&app.active.camera.fov===90);const camera=app.active.camera.position.clone(),pose=app.active.pose;app.setZoom(6);assert(app.active.camera.position.distanceTo(camera)>4&&app.active.avatar.visible);app.ui.open('settings');assert(document.querySelector('#camera-fov')?.value==='90');app.ui.close();app.setZoom(0);assert(app.active.camera.position.x===pose.x&&!app.active.avatar.visible);app.selection.mode='hardcore';app.prepare();assert(app.kind==='hq');app.selection.mode='beginner';
+});
+test('Desktop look starts on right button and movement pad follows touch capability',()=>{
+ const s=app.active,capture=canvas.setPointerCapture;canvas.setPointerCapture=()=>{};const pointer=(button,x)=>({button,pointerType:'mouse',pointerId:9,target:canvas,clientX:x,clientY:100,preventDefault:()=>{}});s.input.down(pointer(0,100));assert(!s.input.look);s.input.down(pointer(2,100));assert(s.input.look?.id===9);const yaw=s.pose.yaw;s.input.move(pointer(2,140));assert(s.pose.yaw!==yaw);s.input.release({pointerId:9});canvas.setPointerCapture=capture;const coarse=matchMedia('(hover:none) and (pointer:coarse)').matches;assert((getComputedStyle(document.querySelector('#walk-pad')).display==='grid')===coarse);
 });
 test('Empty loadouts block deploy; map and loadout lock at deployment',()=>{
  app.prepare();store.unequip(0);store.unequip(1);store.unequip(2);app.deploy();assert(!app.deploying);store.equip('prism-sentry',0);app.selectMap('frostline');app.deploy();assert(Object.isFrozen(app.mission)&&Object.isFrozen(app.mission.loadout));app.update(.1);assert(app.kind==='battle'&&app.active.battle.path===MAPS[1].path);

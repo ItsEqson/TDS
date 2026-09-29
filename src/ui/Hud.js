@@ -1,4 +1,5 @@
 import { TOWER,TOWERS } from '../data/towers.js';
+import { activeTower } from '../data/progression.js';
 import { portrait } from './art.js';
 import { WAVE } from '../data/waves.js';
 import { towerStats,upgradeCost,TOWER_SPECIAL } from '../gameplay/Tower.js';
@@ -16,7 +17,7 @@ export class Hud {
     this.onAction=this.onAction.bind(this);
     this.root.addEventListener('click',this.onAction);
     const tray=document.querySelector('#battle-loadout');
-    if(tray){tray.innerHTML=scene.mission?scene.mission.loadout.map((id,i)=>`<button data-tower="${id||''}" ${!id?'disabled':''}>${portrait(id)}${i+1} · ${id?TOWERS[id].name:'Empty'}<small>${id?TOWERS[id].cost+' cash':''}</small></button>`).join(''):'';}
+    if(tray){tray.innerHTML=scene.mission?scene.mission.loadout.map((id,i)=>{const form=id&&activeTower(id,scene.mission.forms);return `<button data-tower="${id||''}" ${!id?'disabled':''}>${portrait(form?.id||id)}${i+1} · ${form?.name||'Empty'}<small>${form?form.cost+' cash':''}</small></button>`;}).join(''):'';}
     this.panel=document.querySelector('#tower-panel');
     this.panel.innerHTML='<strong id="selected-name"></strong><span id="selected-level"></span><span id="selected-stats"></span><span id="selected-special"></span><button data-action="upgrade" id="tower-upgrade"></button><button data-action="sell" id="tower-sell"></button>';
     this.panelName=this.panel.querySelector('#selected-name');this.panelLevel=this.panel.querySelector('#selected-level');this.panelStats=this.panel.querySelector('#selected-stats');this.panelSpecial=this.panel.querySelector('#selected-special');this.upgradeButton=this.panel.querySelector('#tower-upgrade');this.sellButton=this.panel.querySelector('#tower-sell');

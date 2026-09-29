@@ -1,9 +1,11 @@
 import { SPECIALIST as S } from '../data/specialists.js';
 import { TOWERS } from '../data/towers.js';
 import { ECONOMY } from '../data/headquarters.js';
+import { MODES } from '../data/headquarters.js';
+import { accountLevel,requiredTowerLevel,VARIANTS,GOLDEN_FORMS,baseTower } from '../data/progression.js';
 const KEY='copper-reach-profile-v1';
 const STARTERS=['prism-sentry','longwatch','blast-courier'];
-const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:[...STARTERS],loadout:[...STARTERS],skins:['standard'],skin:'standard',crates:0,tickets:1,claims:[],loginDay:'',loginCount:0,tutorialSeen:false,codes:[],records:{},clearedModes:[],secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
+const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:[...STARTERS],loadout:[...STARTERS],forms:{},fov:68,skins:['standard'],skin:'standard',crates:0,goldenCrates:0,tickets:1,claims:[],loginDay:'',loginCount:0,tutorialSeen:false,codes:[],records:{},clearedModes:[],secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
 // Profile mutations and persistence have one owner. Invalid saves recover field by field.
 export class SaveStore {
   constructor(storage){
@@ -13,15 +15,21 @@ export class SaveStore {
     this.dirty=false;this.saveClock=0;
     this.refreshPeriods();
   }
+  get level(){return accountLevel(this.data.xp);}
   normalize(raw){
     const p=initial();if(!raw||raw.version!==1)return p;
-    for(const key of ['shards','coins','xp','wins','kills','played','missions','crates','tickets','loginCount','flawless'])if(Number.isFinite(raw[key])&&raw[key]>=0)p[key]=Math.min(raw[key],1e9);
+    for(const key of ['shards','coins','xp','wins','kills','played','missions','crates','goldenCrates','tickets','loginCount','flawless'])if(Number.isFinite(raw[key])&&raw[key]>=0)p[key]=Math.min(raw[key],1e9);
+    if(Number.isFinite(raw.fov))p.fov=Math.max(50,Math.min(100,raw.fov));
     for(const key of ['claims','codes'])if(Array.isArray(raw[key]))p[key]=raw[key].filter(x=>typeof x==='string').slice(0,1000);
     if(Array.isArray(raw.clearedModes))p.clearedModes=[...new Set(raw.clearedModes.filter(x=>typeof x==='string'))];
     p.owned=[...new Set([...STARTERS,...(Array.isArray(raw.owned)?raw.owned.filter(id=>Object.hasOwn(TOWERS,id)):[])])];
+    for(const id of [...p.owned])if(VARIANTS[id]&&!p.owned.includes(VARIANTS[id]))p.owned.push(VARIANTS[id]);
     p.skins=['standard',...['amber','violet'].filter(x=>Array.isArray(raw.skins)&&raw.skins.includes(x))];
     p.skin=p.skins.includes(raw.skin)?raw.skin:'standard';
-    const used=new Set();p.loadout=Array.from({length:3},(_,i)=>{const id=raw.loadout?.[i];if(!p.owned.includes(id)||used.has(id))return null;used.add(id);return id;});
+    const used=new Set();p.loadout=Array.from({length:3},(_,i)=>{const id=baseTower(raw.loadout?.[i]);if(!p.owned.includes(id)||used.has(id))return null;used.add(id);return id;});
+    for(const [base,form] of Object.entries(raw.forms||{}))if(VARIANTS[form]===base&&p.owned.includes(form))p.forms[base]=form;
+    // Older saves stored alternate forms as separate loadout entries.
+    for(const id of Array.isArray(raw.loadout)?raw.loadout:[])if(VARIANTS[id]&&p.owned.includes(id)&&!p.forms[VARIANTS[id]])p.forms[VARIANTS[id]]=id;
     p.tutorialSeen=raw.tutorialSeen===true;
     if(typeof raw.loginDay==='string')p.loginDay=raw.loginDay;
     p.secret=raw.secret===true;
@@ -32,21 +40,28 @@ export class SaveStore {
   }
   save(){try{this.storage?.setItem(KEY,JSON.stringify(this.data));this.dirty=false;}catch{this.warning='Storage is full or disabled. Progress is session-only.';}}
   change(fn){const result=fn(this.data);this.save();return result;}
+  setFov(value){return this.change(p=>p.fov=Math.max(50,Math.min(100,Math.round(value))));}
+  setForm(base,form){return this.change(p=>{if(form==='standard'){delete p.forms[base];return true;}if(VARIANTS[form]!==base||!p.owned.includes(form)||!p.owned.includes(base))return false;p.forms[base]=form;return true;});}
   refreshPeriods(){
     const now=new Date(),day=now.toISOString().slice(0,10);const monday=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-(now.getUTCDay()+6)%7));const week=monday.toISOString().slice(0,10);
     if(this.data.daily.period!==day)this.data.daily={period:day,missions:0,claimed:false};
     if(this.data.weekly.period!==week)this.data.weekly={period:week,kills:0,claimed:false};
   }
   tick(dt){this.data.played+=dt;this.saveClock+=dt;if(this.saveClock>=15){this.saveClock=0;this.refreshPeriods();this.save();}}
-  equip(id,slot){return this.change(p=>{if(slot<0||slot>2||!p.owned.includes(id))return false;const old=p.loadout.indexOf(id),replaced=p.loadout[slot];if(old>=0)p.loadout[old]=replaced;p.loadout[slot]=id;return true;});}
+  equip(id,slot){return this.change(p=>{id=baseTower(id);if(slot<0||slot>2||!p.owned.includes(id))return false;const old=p.loadout.indexOf(id),replaced=p.loadout[slot];if(old>=0)p.loadout[old]=replaced;p.loadout[slot]=id;return true;});}
   unequip(slot){this.change(p=>{if(slot>=0&&slot<3)p.loadout[slot]=null;});}
   markTutorialSeen(){this.change(p=>{p.tutorialSeen=true;});}
   buy(kind){return this.change(p=>{
     const tower=Object.hasOwn(TOWERS,kind)?TOWERS[kind]:null;const currency=tower?.currency||'coins';
     const price=tower?tower.unlockPrice:kind==='crate'?ECONOMY.cratePrice:ECONOMY.skinPrice;
+    if(kind==='golden-crate'){if(p.coins<50000)return 'Need 50,000 coins.';p.coins-=50000;p.goldenCrates++;return 'Golden crate added.';}
     if((!tower&&!['crate','amber'].includes(kind))||p[currency]<price||p.owned.includes(kind)||p.skins.includes(kind))return 'Purchase unavailable.';
+    if(tower&&tower.tier==='Golden')return 'Golden forms come from the Golden crate.';
+    if(tower&&this.level<(requiredTowerLevel[kind]||1))return `Reach level ${requiredTowerLevel[kind]} first.`;
+    if(tower&&VARIANTS[kind]&&!p.owned.includes(VARIANTS[kind]))return 'Recruit the base tower first.';
     p[currency]-=price;if(tower)p.owned.push(kind);else if(kind==='crate')p.crates++;else p.skins.push(kind);return 'Added to your collection.';
   });}
+  openGoldenCrate(){return this.change(p=>{if(!p.goldenCrates)return null;p.goldenCrates--;const remaining=GOLDEN_FORMS.filter(id=>!p.owned.includes(id));if(!remaining.length){p.coins+=50000;return {duplicate:true};}const id=remaining[Math.floor(Math.random()*remaining.length)];p.owned.push(id);return {id,base:VARIANTS[id],duplicate:false};});}
   claim(id){return this.change(p=>{
     this.refreshPeriods();
     const today=new Date().toISOString().slice(0,10);
@@ -63,11 +78,15 @@ export class SaveStore {
   discover(){this.change(p=>{if(!p.secret){p.secret=true;p.coins+=30;}});}
   complete(battle,mission){return this.change(p=>{
     this.refreshPeriods();
-    const won=battle.state==='WON',reward=won?Math.round(ECONOMY.winCoins*(mission.mode==='challenge'?1.5:1)):ECONOMY.lossCoins;
-    if(won&&['fallen','hardcore','voidcore'].includes(mission.mode))p.shards+=S.victoryShards;
-    p.missions++;p.kills+=battle.killed;p.coins+=reward;p.xp+=won?50:10;
+    const won=battle.state==='WON',mode=MODES.find(m=>m.id===mission.mode),rewards=mode?.rewards;
+    const progress=mode?Math.min(1,Math.max(0,((Number.isFinite(battle.wave)?battle.wave:1)-1)/mode.waves)):0;
+    const reward=won?(rewards?(rewards.coins||0):ECONOMY.winCoins):Math.max(ECONOMY.lossCoins,Math.round((rewards?.coins||0)*progress*.25));
+    const gems=won?(rewards?(rewards.shards||0):(['fallen','hardcore','voidcore'].includes(mission.mode)?S.victoryShards:0)):Math.round((rewards?.shards||0)*progress*.25);
+    const weekday=new Date().getUTCDay(),xpBoost=weekday===0||weekday>=5?2:1;
+    const experience=won?(rewards?.xp??50):Math.max(10,Math.round((rewards?.xp||0)*progress*.35));
+    p.shards+=gems;p.missions++;p.kills+=battle.killed;p.coins+=reward;p.xp+=experience*xpBoost;
     p.daily.missions++;p.weekly.kills+=battle.killed;if(won&&battle.health===10)p.flawless++;
-    for(const id of new Set(battle.towers.map(t=>t.definition.id)))p.mastery[id]=(p.mastery[id]||0)+(won?25:5);
+    for(const id of new Set(battle.towers.map(t=>baseTower(t.definition.id))))p.mastery[id]=(p.mastery[id]||0)+(won?(rewards?.towerXp??25):5);
     if(won){p.wins++;if(!p.clearedModes.includes(mission.mode))p.clearedModes.push(mission.mode);const old=p.records[mission.map];p.records[mission.map]={wins:(old?.wins||0)+1,best:Math.min(old?.best||Infinity,battle.elapsed)};}
     return reward;
   });}

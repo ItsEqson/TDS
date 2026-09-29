@@ -3,6 +3,7 @@ import { STATES, isTerminal, canTransition } from '../core/State.js';
 import { WAVE } from '../data/waves.js';
 import { updateSpecialists } from './specialists.js';
 import { TOWERS } from '../data/towers.js';
+import { activeTower } from '../data/progression.js';
 import { OPERATION,MODES } from '../data/headquarters.js';
 import { WAYPOINTS } from '../data/arena.js';
 import { ENEMY } from '../data/enemies.js';
@@ -65,7 +66,7 @@ export class WaveManager {
     return this.count-this.spawned+this.enemies.length;
   }
   place(x,z,towerId='prism-sentry'){
-    const definition=TOWERS[towerId];
+    const definition=activeTower(towerId,this.mission?.forms);
     if(!definition||(this.mission&&!this.mission.loadout.includes(towerId)))return {ok:false,reason:'Tower not equipped'};
     if(isTerminal(this.state))return {
       ok:false,reason:'Battle has ended'

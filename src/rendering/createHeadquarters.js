@@ -10,14 +10,21 @@ export function sign(parent,text,x,y,z,color='#c5eee8',width=5){
   return mesh(parent,new THREE.PlaneGeometry(width,width/8),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}),x,y,z);
 }
 export function createHeadquarters(scene,prep,profile,map){
-  scene.background=new THREE.Color(0x263967);scene.fog=new THREE.Fog(0x263967,35,85);
+  scene.background=new THREE.Color(0x394b70);scene.fog=new THREE.Fog(0x394b70,48,100);
   scene.add(new THREE.HemisphereLight(0xc4e5ff,0x3a414f,2.3));
   const sun=new THREE.DirectionalLight(0xffe1b0,2.6);sun.position.set(4,18,8);scene.add(sun);
   const root=new THREE.Group();scene.add(root);
-  const dark=surfaceMaterial(0x26365d),steel=surfaceMaterial(0x5878a2),floor=surfaceMaterial(0x47718c,'panel',18),white=material(0xc3deef);
+  const dark=surfaceMaterial(0x26365d),steel=surfaceMaterial(0x5878a2),floor=surfaceMaterial(0x57869a,'panel',18),white=material(0xc3deef);
   const glow=new THREE.MeshBasicMaterial({color:0x8cddcf}),gold=new THREE.MeshBasicMaterial({color:0xf5bd77});
   const box=(w,h,d,mat,x,y,z)=>mesh(root,new THREE.BoxGeometry(w,h,d),mat,x,y,z);
   box(46,.3,46,floor,0,-.2,0);
+  const district=[0x378b83,0x8a759f,0xb7825d,0x678e69];
+  for(let i=0;i<4;i++){
+    const x=i%2===0?-11.5:11.5,z=i<2?-11.5:11.5;
+    box(22.5,.035,22.5,surfaceMaterial(district[i],'panel',10),x,-.015,z);
+    const rim=new THREE.MeshBasicMaterial({color:[0x8ce4dc,0xcab6ff,0xffce86,0xb9e6a5][i]});
+    for(const offset of [-8,0,8]){box(.07,.04,6,rim,x+offset,.03,z);box(6,.04,.07,rim,x,.03,z+offset);}
+  }
   for(let i=-22;i<=22;i+=4){box(.035,.02,44,steel,i,0,0);box(44,.02,.035,steel,0,0,i);}
   box(46,10,.8,dark,0,5,-23);box(46,10,.8,dark,0,5,23);box(.8,10,46,dark,-23,5,0);box(.8,10,46,dark,23,5,0);
   for(const x of [-21,21])for(const z of [-20,-10,0,10,20]){box(1,10,1,steel,x,5,z);box(.08,7,1.04,glow,x,4,z);}
@@ -38,7 +45,8 @@ export function createHeadquarters(scene,prep,profile,map){
     const group=new THREE.Group();group.position.set(s.x,0,s.z);group.rotation.y=Math.atan2(-s.x,-s.z);root.add(group);
     const mat=new THREE.MeshBasicMaterial({color:s.color});
     const enamel=material(s.color);enamel.metalness=.3;enamel.roughness=.35;
-    mesh(group,new THREE.BoxGeometry(7,.3,4),steel,0,.1,0);
+    mesh(group,new THREE.CylinderGeometry(3.35,3.55,.3,12),steel,0,.1,0);
+    mesh(group,new THREE.TorusGeometry(3.25,.08,8,48),mat,0,.29,0).rotation.x=Math.PI/2;
     mesh(group,new THREE.BoxGeometry(7,.08,4),enamel,0,.28,0);
     for(const x of [-3.1,3.1]){
       mesh(group,new THREE.BoxGeometry(.18,4.6,.2),mat,x,2.4,-.8);
@@ -48,7 +56,7 @@ export function createHeadquarters(scene,prep,profile,map){
     mesh(group,new THREE.BoxGeometry(6,3,.6),dark,0,1.6,-1.2);
     mesh(group,new THREE.BoxGeometry(6,.09,.1),mat,0,3.2,-.84);
     sign(group,s.name,0,4,-.7,'#'+s.color.toString(16),6);
-    for(const x of [-3.4,3.4])mesh(group,new THREE.BoxGeometry(.28,5,.35),steel,x,2.5,-1);
+    for(const x of [-3.4,3.4])mesh(group,new THREE.CylinderGeometry(.2,.3,5,10),steel,x,2.5,-1);
     for(let i=0;i<7;i++){const bar=mesh(group,new THREE.BoxGeometry(.35,.3+i%3*.3,.08),mat,-2.2+i*.7,1.5,-.85);rotors.push({object:bar,type:'screen',phase:i});}
     const displayIds=['prism-sentry','longwatch','blast-courier','field-mender','spark-warden','dawn-champion','winter-channeler','frequency-artist'];
     const t=createTowerMesh(false,TOWERS[displayIds[Math.max(0,STATIONS.findIndex(st=>st.id===s.id))]]);t.position.set(0,.4,1);t.scale.setScalar(.85);group.add(t);rotors.push({object:t,type:'tower'});
@@ -61,7 +69,11 @@ export function createHeadquarters(scene,prep,profile,map){
   const ring=mesh(root,new THREE.TorusGeometry(2,.06,6,64),gold,0,6,-20);rotors.push({object:ring,type:'ring'});
   // Freight carrier overhead and rotating machinery keep the unoccupied base active.
   const carrier=new THREE.Group();root.add(carrier);
-  mesh(carrier,new THREE.BoxGeometry(2,.7,1.2),white);mesh(carrier,new THREE.BoxGeometry(1,.14,1.4),gold,0,-.45,0);rotors.push({object:carrier,type:'carrier'});
+  mesh(carrier,new THREE.CapsuleGeometry(.6,.8,4,10),white);mesh(carrier,new THREE.TorusGeometry(.9,.09,6,24),gold,0,-.45,0).rotation.x=Math.PI/2;rotors.push({object:carrier,type:'carrier'});
+  for(const [i,s] of STATIONS.entries()){
+    const lamp=new THREE.PointLight(s.color,8,12,2);lamp.position.set(s.x*.72,7,s.z*.72);root.add(lamp);
+    mesh(root,new THREE.IcosahedronGeometry(.42,1),new THREE.MeshBasicMaterial({color:s.color}),s.x*.72,7,s.z*.72);
+  }
   for(const x of [-19,19])for(const z of [-18,18]){box(2,2,2,steel,x,1,z);box(2.05,.12,2.05,gold,x,1.4,z);}
   if(profile.wins){const trophy=mesh(root,new THREE.OctahedronGeometry(1.1),gold,0,4,17);rotors.push({object:trophy,type:'tower'});}
   sign(root,'SERVICE ACCESS / 07',-20,2.5,20,'#7691a4',3);

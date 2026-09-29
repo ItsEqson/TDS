@@ -19,6 +19,7 @@ export class Input {
     canvas.addEventListener('keydown',this.onKey);
     window.addEventListener('keyup',this.onUp);canvas.addEventListener('blur',this.onBlur);window.addEventListener('blur',this.onBlur);document.addEventListener('visibilitychange',this.onBlur);
     canvas.addEventListener('contextmenu',this.onContext);
+    this.onWheel=this.onWheel.bind(this);canvas.addEventListener('wheel',this.onWheel,{passive:false});
     this.pad?.addEventListener('pointerdown',this.onPadDown);
     this.pad?.addEventListener('pointerup',this.onPointerUp);
     this.pad?.addEventListener('pointercancel',this.onPointerUp);
@@ -74,6 +75,7 @@ export class Input {
       this.scene.cancelledContext=false;
     }
   }
+  onWheel(e){if(document.activeElement!==this.canvas)return;e.preventDefault();this.scene.app?.setZoom((this.scene.app.zoom||0)+Math.sign(e.deltaY)*1.5);}
   dispose(){
     const c=this.canvas;
     c.removeEventListener('pointermove',this.onMove);
@@ -83,6 +85,7 @@ export class Input {
     c.removeEventListener('keydown',this.onKey);
     window.removeEventListener('keyup',this.onUp);c.removeEventListener('blur',this.onBlur);window.removeEventListener('blur',this.onBlur);document.removeEventListener('visibilitychange',this.onBlur);
     c.removeEventListener('contextmenu',this.onContext);
+    c.removeEventListener('wheel',this.onWheel);
     this.pad?.removeEventListener('pointerdown',this.onPadDown);
     this.pad?.removeEventListener('pointerup',this.onPointerUp);
     this.pad?.removeEventListener('pointercancel',this.onPointerUp);

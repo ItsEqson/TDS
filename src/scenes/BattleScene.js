@@ -6,6 +6,7 @@ import { isTerminal } from '../core/State.js';
 import { Input } from '../core/Input.js';
 import { Hud } from '../ui/Hud.js';
 import { TOWER,TOWERS } from '../data/towers.js';
+import { activeTower } from '../data/progression.js';
 import { SKINS,OPERATION,FINAL_BOSSES } from '../data/headquarters.js';
 import { ENEMY } from '../data/enemies.js';
 import { ARENA } from '../data/arena.js';
@@ -32,16 +33,17 @@ export class BattleScene {
   init(){
     this.scene=new THREE.Scene();
     this.scene.background=new THREE.Color(0x182d35);
-    this.camera=new THREE.PerspectiveCamera(68,1,.1,250);this.camera.rotation.order='YXZ';
+    this.camera=new THREE.PerspectiveCamera(this.app?.fov||68,1,.1,250);this.camera.rotation.order='YXZ';
     const {
       terrain
     }
     =createWorld(this.scene,this.mission?.mapData);
     this.terrain=terrain;
-    this.ghost=createTowerMesh(true,TOWERS[this.towerId]);this.ghostTowerId=this.towerId;
+    this.ghost=createTowerMesh(true,this.definition);this.ghostTowerId=this.towerId;
     this.ghost.scale.setScalar(1.35);
     this.ghost.visible=false;
     this.scene.add(this.ghost);
+    this.avatar=createTowerMesh(false,{...TOWERS['signal-captain'],color:0x51a7c2});this.avatar.scale.setScalar(1.1);this.scene.add(this.avatar);
     this.walkX=0;this.walkZ=15;this.camera.position.set(this.walkX,WALK.eyeHeight,this.walkZ);
     this.camera.rotation.set(this.pitch,this.yaw,0);
     this.range=createRange();
@@ -56,9 +58,10 @@ export class BattleScene {
   get terminal(){
     return isTerminal(this.battle.state);
   }
+  get definition(){return activeTower(this.towerId,this.mission?.forms);}
   place(){
     if(this.terminal)return;
-    if(this.ghostTowerId!==this.towerId){disposeObject(this.ghost);this.ghost=createTowerMesh(true,TOWERS[this.towerId]);this.ghost.scale.setScalar(1.35);this.scene.add(this.ghost);this.ghostTowerId=this.towerId;}
+    if(this.ghostTowerId!==this.towerId){disposeObject(this.ghost);this.ghost=createTowerMesh(true,this.definition);this.ghost.scale.setScalar(1.35);this.scene.add(this.ghost);this.ghostTowerId=this.towerId;}
     this.placing=true;
     this.selected=null;
     this.message='Move over terrain. ✓ Place here / × cannot place. Esc cancels.';
@@ -153,7 +156,7 @@ export class BattleScene {
     if(!this.placing)return;
     this.ghost.visible=this.hasPoint;
     this.range.visible=this.hasPoint;
-    const definition=TOWERS[this.towerId];
+    const definition=this.definition;
     this.range.scale.setScalar(definition.range/TOWER.range);
     let reason=this.hasPoint?placementReason(this.x,this.z,this.battle.towers,this.battle.cash,definition,this.battle.segments):'Outside arena';
     this.message=reason?'× '+reason:'✓ Place here · '+definition.cost+' cash';
@@ -174,7 +177,7 @@ export class BattleScene {
       if(!this.hasPoint)return;
       const result=this.battle.place(this.x,this.z,this.towerId);
       if(result.ok){
-        const model=createTowerMesh(false,TOWERS[this.towerId]),beam=createBeam();
+        const model=createTowerMesh(false,result.tower.definition),beam=createBeam();
         model.scale.setScalar(1.35);
 
         if(this.mission&&this.mission.skin!=='standard')model.traverse(o=>{if(o.material?.name==='uniform')o.material.color.setHex(SKINS[this.mission.skin].color);});
@@ -188,7 +191,7 @@ export class BattleScene {
         this.placing=false;
         this.ghost.visible=false;
         this.selected=result.tower;
-        this.message=TOWERS[this.towerId].name+' placed. Click another slot to build more.';
+        this.message=this.definition.name+' placed. Click another slot to build more.';
         this.showSelection();
       }
       else this.message='× '+result.reason;
@@ -224,7 +227,7 @@ export class BattleScene {
       const speed=WALK.speed*dt/length;
       this.walkX=THREE.MathUtils.clamp(this.walkX+(right*Math.cos(this.yaw)-forward*Math.sin(this.yaw))*speed,-ARENA.width/2+1,ARENA.width/2-1);
       this.walkZ=THREE.MathUtils.clamp(this.walkZ+(-forward*Math.cos(this.yaw)-right*Math.sin(this.yaw))*speed,-ARENA.depth/2+1,ARENA.depth/2-1);
-      this.camera.position.set(this.walkX,WALK.eyeHeight,this.walkZ);this.camera.rotation.set(this.pitch,this.yaw,0);
+      this.updateCamera();
     }
     if(this.intro>0){this.intro=Math.max(0,this.intro-dt);this.message='Deployment flyover · tracing the approach to the relay';if(!this.intro)this.message=`Commander: Ground swarm inbound. Stop the ${FINAL_BOSSES[this.mission?.mode]||'final threat'} before it reaches the relay.`;this.hud.update();return;}
     const before=this.battle.state;
@@ -235,12 +238,13 @@ export class BattleScene {
       this.ghost.visible=false;
       this.range.visible=false;
       this.message=this.battle.state==='WON'?'Route secured. Press R or Restart to play again.':'Base breached. Press R or Restart to try a defense.';
-      if(this.app&&!this.rewarded){this.rewarded=true;const reward=this.app.store.complete(this.battle,this.mission);this.message+=` +${reward} account coins. Return to headquarters to collect rewards.`;}
+      if(this.app&&!this.rewarded){this.rewarded=true;const reward=this.app.store.complete(this.battle,this.mission);this.message+=` ${reward?`+${reward} account coins. `:''}Experience and mode rewards added to your profile.`;}
     }
     this.hud.update();
   }
   render(renderer,alpha){
-    this.camera.position.y=WALK.eyeHeight+(this.intro>0?Math.sin(this.intro/OPERATION.flyoverSeconds*Math.PI)*2:0);
+    this.updateCamera();
+    if(this.intro>0)this.camera.position.y+=Math.sin(this.intro/OPERATION.flyoverSeconds*Math.PI)*2;
     for(const e of this.battle.enemies){
       let model=this.enemyMeshes.get(e.id);
       if(!model){
@@ -288,6 +292,7 @@ export class BattleScene {
     this.pointerOutside();
   }
   look(dx,dy){this.yaw-=dx;this.pitch=THREE.MathUtils.clamp(this.pitch-dy,-1.25,1.25);}
+  updateCamera(){const d=this.app?.zoom||0;if(this.avatar){this.avatar.visible=d>1;this.avatar.position.set(this.walkX,0,this.walkZ);this.avatar.rotation.y=this.yaw+Math.PI;}if(d>0){this.camera.position.set(this.walkX+Math.sin(this.yaw)*d,WALK.eyeHeight+d*.26,this.walkZ+Math.cos(this.yaw)*d);this.camera.lookAt(this.walkX-Math.sin(this.yaw)*2,WALK.eyeHeight-Math.sin(this.pitch)*2,this.walkZ-Math.cos(this.yaw)*2);}else{this.camera.position.set(this.walkX,WALK.eyeHeight,this.walkZ);this.camera.rotation.set(this.pitch,this.yaw,0);}}
   chooseTower(id){if(!this.mission?.loadout.includes(id))return;this.towerId=id;this.place();}
   headquarters(){this.app?.go('hq');}
   exit(){

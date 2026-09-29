@@ -7,16 +7,17 @@ export const MAPS = Object.freeze([
   {id:'verdant-loop',name:'Verdant Loop',theme:'Overgrown observatory',color:0x63ae7c,path:[[-26,-12],[-15,-12],[-15,10],[-2,10],[-2,-10],[12,-10],[12,11],[24,11]].map(([x,z])=>({x,z})),brief:'Protect the observatory along its long garden road.',space:'Open center',hazard:'Dense outer foliage'}
 ]);
 export const MODES = Object.freeze([
-  {id:'beginner',name:'Beginner',detail:'Short introduction. Final threat: the Brute.',available:true,category:'survival',waves:5,healthScale:1},
-  {id:'easy',name:'Easy',detail:'Growing groups. Final threat: the Grave Digger.',available:true,category:'survival',waves:8,healthScale:1.2},
-  {id:'intermediate',name:'Intermediate',detail:'Faster and sturdier enemies. Final threat: Patient Zero.',available:true,category:'survival',waves:10,healthScale:1.45},
-  {id:'molten',name:'Molten',detail:'Heat-charged enemies. Final threat: the Molten Warlord.',available:true,category:'survival',waves:12,healthScale:1.75},
-  {id:'fallen',name:'Fallen',detail:'Fallen enemies. Final threats: the Fallen Monarchs.',available:true,category:'survival',waves:15,healthScale:2.1},
-  {id:'hardcore',name:'Hardcore',detail:'A long void assault. Win to unlock Voidcore.',available:true,category:'hardcore',waves:20,healthScale:2.5},
-  {id:'voidcore',name:'Voidcore',detail:'The void returns with greater force.',available:true,category:'hardcore',waves:25,healthScale:3.2},
+  {id:'beginner',name:'Legacy Training',detail:'Short introduction retained for existing sessions.',available:true,category:'legacy',waves:5,healthScale:1},
+  {id:'easy',name:'Easy',detail:'Growing groups. Final threat: the Brute.',available:true,category:'survival',waves:20,healthScale:1.2,rewards:{coins:300,xp:50,towerXp:25}},
+  {id:'casual',name:'Casual',detail:'Steadier pressure and a final grave-born threat.',available:true,category:'survival',waves:25,healthScale:1.3,rewards:{coins:450,xp:90,towerXp:50}},
+  {id:'intermediate',name:'Intermediate',detail:'Faster and sturdier enemies. Final threat: Patient Zero.',available:true,category:'survival',waves:30,healthScale:1.45,rewards:{coins:600,xp:120,towerXp:75}},
+  {id:'molten',name:'Molten',detail:'Heat-charged enemies. Final threat: the Molten Warlord.',available:true,category:'survival',waves:35,healthScale:1.75,rewards:{coins:950,xp:185,towerXp:120}},
+  {id:'fallen',name:'Fallen',detail:'Fallen enemies. Final threats: the Fallen Monarchs.',available:true,category:'survival',waves:40,healthScale:2.1,rewards:{coins:1350,xp:250,towerXp:185}},
+  {id:'hardcore',name:'Hardcore',detail:'A long void assault. Requires level 50.',available:true,category:'hardcore',waves:50,healthScale:2.5,requiredLevel:50,rewards:{shards:400,xp:400,towerXp:350}},
+  {id:'voidcore',name:'Voidcore',detail:'The void returns with greater force. Requires a Hardcore victory.',available:true,category:'hardcore',waves:50,healthScale:3.2,requiredLevel:50,rewards:{shards:700,coins:1000,xp:500,towerXp:420}},
   ...['Story','Event','Sandbox'].map(name=>({id:name.toLowerCase(),name,detail:'Additional mission content in development.',available:false}))
 ]);
-export const FINAL_BOSSES=Object.freeze({beginner:'Brute',easy:'Grave Digger',intermediate:'Patient Zero',molten:'Molten Warlord',fallen:'Fallen Monarch',hardcore:'Void Reaver',voidcore:'The Void'});
+export const FINAL_BOSSES=Object.freeze({beginner:'Brute',easy:'Brute',casual:'Grave Digger',intermediate:'Patient Zero',molten:'Molten Warlord',fallen:'Fallen Monarch',hardcore:'Void Reaver',voidcore:'The Void'});
 export const STATIONS = Object.freeze([
   {id:'missions',name:'DEPLOYMENT',x:0,z:-17,color:0x8cddcf},
   {id:'inventory',name:'ARMORY',x:-13,z:-12,color:0x9eabff},

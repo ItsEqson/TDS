@@ -1,20 +1,22 @@
-## Current play flow (2026-09-26)
+## Current play flow (2026-09-29)
 
-Start in the 3D headquarters. **Choose mission** sits above the bottom loadout dock. Survival lets you pick Beginner, Easy, Intermediate, Molten, or Fallen; Hardcore starts directly, then offers Voidcore after a Hardcore victory. Starting a mode opens the walkable staging lobby with the same player session and loadout. Choose a map, edit the three equipped slots, then deploy. During battle, WASD moves the commander model; the elevated camera keeps placement visible.
+Start in a colorful 3D headquarters. Use **WASD** to walk, **right-drag** to look, and the **mouse wheel** to zoom out into a following third-person view. Touch movement pads appear only on coarse touch devices. Set a persistent 50°–100° field of view in Settings. The same camera controls work in staging and battle.
 
-Each difficulty runs 5–25 waves with rising enemy count, health, and speed, a final boss, and growing wave-clear cash. Click a placed tower to inspect its special kit, level, current damage/range/fire interval, total damage dealt, upgrade price, and sell refund. Towers have five battle upgrade levels; upgrades improve stats and visibly enlarge their model. Summon damage and damage-over-time count toward the owning tower. The collection now opens as skin/name cards, with a separate 3D inspection view for each tower. Saved content IDs stay compatible while display names follow `raw_game_ideas.md`.
+Survival offers Easy (20 waves), Casual (25), Intermediate (30), Molten (35), and Fallen (40). Hardcore and Voidcore use 50-wave prototype campaigns; both require account level 50, and Voidcore requires a Hardcore victory. The old five-wave Beginner campaign remains internally for save/test compatibility but is no longer a separate public mode. Pick a mode, choose a map in the walkable staging hall, edit the three-slot loadout, and deploy.
 
-The roster uses 19 working prototype kits rather than 74 bespoke abilities. Existing portraits are original artwork and shared finishes remain the available skins. Only the currently authored 3D maps and enemy models are available; the named mode bosses use the current boss model and scaling.
+Winning awards each mode's listed coins or gems, account XP, and tower XP. Loss rewards scale with waves survived; account XP doubles Friday through Sunday (UTC). Level thresholds from `raw_game_ideas.md` gate Turret (50), Pursuit (100), and Gatling Gun (175). Golden forms are obtained through a 50,000-coin Golden crate; evolved forms and owned golden forms are selected inside their base tower and use their own battle stats. The inventory sorts by ownership, name, role, or unlock level. Existing save IDs migrate to base-tower loadout slots.
+
+The roster still uses shared prototype combat kits rather than fully bespoke abilities. The named mode bosses share the current procedural model and scaling. Multiplayer cash splitting, VIP boosts, authored boss mechanics, and physical mobile-device testing remain outside this single-player prototype.
 
 ## Character roster update
 
-The armory and shop now contain **74 original human recruits** representing every tower role named in `raw_game_ideas.md`, including evolved, golden, and story counterparts. Each has a portrait, a rotating human 3D model, an unlock price, and a working prototype combat role. Inventory and shop have category filters. Existing collection saves and equipped IDs are retained.
+The roster contains **74 original human character definitions** representing roles from `raw_game_ideas.md`. Golden and evolved entries are alternate forms within a base tower, and the public inventory/shop list only base towers. Each has a portrait, a rotating 3D model, and a prototype combat role. Existing collection IDs are retained.
 
-Normal encounters use zombies. Fallen and Hardcore / Voidcore use purple void zombies and a Rift Brute. These are compact encounters, not full difficulty campaigns. Void victories award 50 shards; hardcore recruits cost shards and other recruits cost coins. Advanced character-specific abilities, combat upgrade trees, aircraft, vehicles, cliff placement, and detection systems remain future work. Summoner characters currently send friendly human runners; support auras do not stack.
+Normal encounters use zombies. Fallen and Hardcore / Voidcore use purple void zombies. Hardcore recruits spend gems (stored under the legacy `shards` save field). Advanced character-specific abilities, aircraft, vehicles, cliff placement, and detection systems remain future work. Summoner characters currently send friendly human runners; support auras do not stack.
 
 Run `python -m http.server 8011` and open `http://localhost:8011`. Tests: `/tests/index.html`, `/tests/lifecycle.html`, `/tests/headquarters.html`, `/tests/roster.html`. Python only serves static files; the game has no build step. `scripts/expand_roster.py` regenerates the original roster data and vector artwork.
 
-The older prototype notes below describe the earlier delivery and are superseded by this roster update where they differ.
+The older prototype notes below are historical and are superseded by this current play flow where they differ.
 
 # Copper Reach — Headquarters prototype
 

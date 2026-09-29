@@ -73,6 +73,13 @@ body[data-scene=hq] .hq-mission{left:50%;right:auto;top:auto;bottom:150px;transf
 .staging-actions{position:absolute;left:50%;bottom:145px;transform:translateX(-50%);display:flex;gap:10px;pointer-events:auto;white-space:nowrap}.staging-actions button{pointer-events:auto}body[data-scene=prep] .hq-mission{display:none}body[data-scene=prep] .walk-help{bottom:205px}.inventory-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;max-height:52vh;overflow:auto}.inventory-cards button{text-align:center;min-height:180px}.inventory-cards .tower-portrait{display:block;margin:0 auto 8px;width:90px;height:90px}.inventory-cards strong,.inventory-cards small{display:block}.detail-layout{min-height:360px}#tower-panel{background:#10283fe8;border:1px solid #719ac1;border-radius:8px;padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}#tower-panel strong{color:#ffdb82}#tower-panel span{font-size:12px;color:#cfe1ec}#tower-panel button{padding:8px 12px}#tower-panel[hidden]{display:none!important}@media(max-width:650px){.staging-actions{bottom:130px}.inventory-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-cards button{min-height:150px}.inventory-cards .tower-portrait{width:60px;height:60px}#tower-panel{max-height:160px;overflow:auto}}
 #stage-back{position:absolute;right:32px;top:118px;pointer-events:auto;z-index:1}@media(max-width:650px){#stage-back{right:12px;top:225px;font-size:11px;padding:8px}}
 @media(max-width:650px){body[data-scene=hq] #walk-pad,body[data-scene=prep] #walk-pad{bottom:260px}}
+/* Touch controls follow input capability, not viewport width. */
+#walk-pad,#battle-walk-pad{display:none!important}
+@media (hover:none) and (pointer:coarse){body[data-scene=hq] #walk-pad,body[data-scene=prep] #walk-pad,body[data-scene=battle] #battle-walk-pad{display:grid!important}}
+#profile-level{display:inline!important;padding:6px 9px;border-radius:20px;background:#27475fcf;color:#ffe3a2;font-weight:700;white-space:nowrap}
+.hq-top{position:relative;z-index:2}.hq-nav{z-index:1}
+body.zoomed[data-scene=hq] .hq-mission{left:auto;right:16px;transform:none;width:min(230px,40vw)}
+.roster-controls{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}.roster-controls label{min-width:150px;flex:1}.roster-controls select{display:block;width:100%;padding:10px;margin-top:6px;background:#213e53;color:#f4f6eb;border:1px solid #678899;border-radius:6px}
 @media(max-height:550px) and (min-width:651px){body[data-scene=hq] .walk-help,body[data-scene=prep] .walk-help{display:none}}
 
 /* A lifted bevel and clipped corners make controls read as physical command tiles. */

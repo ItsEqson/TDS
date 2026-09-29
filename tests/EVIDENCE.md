@@ -1,5 +1,11 @@
 # Phase 1 verification evidence
 
+## 2026-09-29 color, camera, progression and mode pass
+
+Served the project with `python -m http.server 8765` and checked it in the embedded browser. The current suites passed: 12/12 logic, 12/12 roster, 15/15 headquarters, and 7/7 lifecycle. The headquarters suite now checks persistent FOV, zoom distance, right-button look, touch-only pad visibility, mode locks, resizing, and repeated scene/GPU cleanup. The roster suite checks level locks, base-tower alternate forms, the 50,000-coin Golden crate, deployed golden stats, exact Survival wave counts, listed triumph rewards, partial loss rewards, and restart state.
+
+Visually inspected the multicolor headquarters and phone-width layout. Opened the live Settings panel and changed FOV from 68° to 90°. Opened the live Survival menu and confirmed Easy 20, Casual 25, Intermediate 30, Molten 35, and Fallen 40 with their reward previews. A headless fixed-step simulation with three long-range towers reached the configured final wave on all five Survival modes; that setup used extra cash and base health, so it does not establish normal progression balance. Physical touch and full live campaign balance remain open.
+
 Executed against the Python static server at `http://127.0.0.1:8000/` in the Codex embedded Chromium browser on 2026-09-19 (local date). No install or build was used.
 
 ## Automated browser results

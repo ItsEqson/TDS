@@ -3,6 +3,8 @@ import { TOWERS } from '../src/data/towers.js';
 import { SaveStore } from '../src/storage/SaveStore.js';
 import { WaveManager } from '../src/gameplay/WaveManager.js';
 import { MAPS } from '../src/data/headquarters.js';
+import { MODES } from '../src/data/headquarters.js';
+import { VARIANTS,GOLDEN_FORMS,baseTower,requiredTowerLevel } from '../src/data/progression.js';
 import { createTower,updateTower,towerStats,upgradeCost } from '../src/gameplay/Tower.js';
 import { createEnemy } from '../src/gameplay/Enemy.js';
 import { updateSpecialists } from '../src/gameplay/specialists.js';
@@ -10,10 +12,14 @@ import { createTowerMesh,createEnemyMesh,disposeObject } from '../src/rendering/
 const results=[];
 const assert=(v,m='Assertion failed')=>{if(!v)throw Error(m);};
 async function test(name,fn){try{await fn();results.push('PASS — '+name);}catch(e){results.push('FAIL — '+name+': '+e.message);console.error(e);}}
-await test('All 74 recruits purchase, equip and persist; shards cannot be replaced by coins',()=>{
- let data=null;const storage={getItem:()=>data,setItem:(k,v)=>data=v},s=new SaveStore(storage);s.data.coins=100000;s.data.shards=0;const hardcore=Object.values(TOWERS).find(t=>t.tier==='Hardcore');s.buy(hardcore.id);assert(!s.data.owned.includes(hardcore.id));s.data.shards=100000;
- for(const t of Object.values(TOWERS)){s.buy(t.id);assert(s.data.owned.includes(t.id));assert(s.equip(t.id,1));const before=s.data[t.currency];s.buy(t.id);assert(s.data[t.currency]===before);}
- const reloaded=new SaveStore(storage);assert(reloaded.data.owned.length===74);assert(reloaded.data.loadout[1]===s.data.loadout[1]);
+await test('Base roster, level gates and alternate forms persist without duplicate loadout towers',()=>{
+ let data=null;const storage={getItem:()=>data,setItem:(k,v)=>data=v},s=new SaveStore(storage);s.data.coins=300000;s.data.shards=100000;
+ for(const [id,level] of Object.entries(requiredTowerLevel)){assert(s.buy(id).includes(`level ${level}`));assert(!s.data.owned.includes(id));}
+ s.data.xp=17400;assert(s.level===175);
+ for(const t of Object.values(TOWERS).filter(t=>!VARIANTS[t.id])){s.buy(t.id);assert(s.data.owned.includes(t.id),t.id);assert(s.equip(t.id,1),t.id);}
+ const form='signal-captain',base=VARIANTS[form];s.buy(form);assert(s.setForm(base,form));assert(s.equip(form,1));assert(s.data.loadout[1]===base);
+ const before=s.data.coins;s.buy('golden-crate');assert(s.data.coins===before-50000);const gold=s.openGoldenCrate();assert(GOLDEN_FORMS.includes(gold.id)&&gold.base===baseTower(gold.id));assert(s.setForm(gold.base,gold.id));
+ const reloaded=new SaveStore(storage);assert(reloaded.data.forms[base]===(gold.base===base?gold.id:form)&&reloaded.data.forms[gold.base]===gold.id);
 });
 await test('Every portrait loads as a valid image',async()=>{
  await Promise.all(Object.keys(TOWERS).map(id=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>image.naturalWidth?resolve():reject(Error(id));image.onerror=()=>reject(Error(id));image.src='../assets/icons/towers/'+id+'.svg';})));
@@ -50,8 +56,15 @@ await test('Hardcore victory persists the Voidcore unlock',()=>{
  s.complete({state:'WON',killed:0,health:10,towers:[],elapsed:12},{mode:'hardcore',map:'copper-reach'});
  assert(new SaveStore(storage).data.clearedModes.includes('hardcore'));
 });
-await test('Fallen / Voidcore complete, award shards, and reset all entities',()=>{
- for(const mode of ['fallen','hardcore','voidcore']){const mission={path:MAPS[0].path,map:MAPS[0].id,mode,loadout:['longwatch']};const b=new WaveManager(mission);b.cash=1000;b.health=1000;for(const x of [-13,-1,15])assert(b.place(x,0,'longwatch').ok,'Placement '+x);for(let i=0;i<100000&&!['WON','LOST'].includes(b.state);i++){if(b.state==='PREP')b.start();b.update(1/60);}assert(b.state==='WON',mode+' '+b.state+' wave '+b.wave);const s=new SaveStore({getItem:()=>null,setItem:()=>{}});s.complete(b,mission);assert(s.data.shards===50);b.restart();assert(!b.allies.length&&!b.towers.length&&!b.enemies.length);}
+await test('Campaign wave counts and triumph rewards match mode data; restart clears entities',()=>{
+ const counts={easy:20,casual:25,intermediate:30,molten:35,fallen:40};for(const [id,waves] of Object.entries(counts))assert(MODES.find(m=>m.id===id).waves===waves);
+ for(const mode of ['easy','casual','intermediate','molten','fallen','hardcore','voidcore']){const mission={path:MAPS[0].path,map:MAPS[0].id,mode,loadout:['longwatch']},b=new WaveManager(mission),m=MODES.find(x=>x.id===mode);assert(b.totalWaves===m.waves);b.cash=1000;assert(b.place(-13,0,'longwatch').ok);b.state='WON';const s=new SaveStore({getItem:()=>null,setItem:()=>{}}),reward=s.complete(b,mission),day=new Date().getUTCDay(),boost=day===0||day>=5?2:1;assert(reward===(m.rewards.coins||0)&&s.data.xp===m.rewards.xp*boost&&s.data.shards===(m.rewards.shards||0));b.restart();assert(!b.allies.length&&!b.towers.length&&!b.enemies.length);}
+});
+await test('Partial campaign rewards scale with waves survived',()=>{
+ const mission={mode:'hardcore',map:'copper-reach'},s=new SaveStore({getItem:()=>null,setItem:()=>{}});s.complete({state:'LOST',wave:40,killed:0,health:0,towers:[],elapsed:10},mission);assert(s.data.shards>0&&s.data.shards<400&&s.data.xp>10);
+});
+await test('Selected golden form supplies the deployed tower stats',()=>{
+ const b=new WaveManager({path:MAPS[0].path,mode:'easy',loadout:['prism-sentry'],forms:{'prism-sentry':'gilded-prism-sentry'}});const placed=b.place(-13,0,'prism-sentry');assert(placed.ok&&placed.tower.definition.id==='gilded-prism-sentry'&&placed.tower.definition.damage>TOWERS['prism-sentry'].damage);
 });
 await test('Character and zombie geometry renders, then releases all resources',()=>{
  const renderer=new THREE.WebGLRenderer();renderer.setSize(900,380);document.querySelector('#gallery').append(renderer.domElement);const scene=new THREE.Scene();scene.background=new THREE.Color(0x172d38);scene.add(new THREE.HemisphereLight(0xffffff,0x65798a,3));const camera=new THREE.PerspectiveCamera(40,900/380,.1,100);camera.position.set(5,5,13);camera.lookAt(0,1,0);

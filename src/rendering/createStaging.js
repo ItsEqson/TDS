@@ -15,9 +15,13 @@ export function createStaging(scene,map){
   scene.add(new THREE.HemisphereLight(0xd8f6ff,0x3d465b,2.5));
   const light=new THREE.DirectionalLight(0xffd5a1,2.5);light.position.set(-8,18,10);scene.add(light);
   const root=new THREE.Group();scene.add(root);
-  const floor=material(0x426b7f),wall=material(0x23435c),trim=material(0x78a9b7),gold=material(0xffca73),cyan=new THREE.MeshBasicMaterial({color:0x65e5d5});
+  const floor=material(0x4d7388),wall=material(0x23435c),trim=material(0x78a9b7),gold=material(0xffca73),cyan=new THREE.MeshBasicMaterial({color:0x65e5d5});
   const box=(w,h,d,mat,x,y,z)=>mesh(root,new THREE.BoxGeometry(w,h,d),mat,x,y,z);
   box(46,.4,46,floor,0,-.25,0);
+  for(const [x,z,color] of [[0,-12,0x397e86],[-12,0,0x937456],[12,0,0x966b80],[0,13,0x637e61]]){
+    const tile=material(color);mesh(root,new THREE.CylinderGeometry(7,7,.05,12),tile,x,0,z);
+    mesh(root,new THREE.TorusGeometry(6.8,.08,6,48),gold,x,.05,z).rotation.x=Math.PI/2;
+  }
   for(let n=-20;n<=20;n+=5){box(.07,.03,43,trim,n,.01,0);box(43,.03,.07,trim,0,.01,n);}
   for(const x of [-23,23]){box(.7,10,46,wall,x,5,0);for(const z of [-18,-6,6,18]){box(.9,9,1,trim,x,4.5,z);box(.12,5,.7,cyan,x,4,z);}}
   for(const z of [-23,23])box(46,10,.7,wall,0,5,z);
@@ -26,7 +30,7 @@ export function createStaging(scene,map){
   sign(root,'EXPEDITION HALL',0,7.5,-21,'#ffe2a2',12);
   const obstacles=[],rotors=[];
   // A physical map table, armory and supplies make preparation spatial.
-  box(8,1.7,5,wall,0,.85,-12);box(8.3,.18,5.3,trim,0,1.78,-12);
+  mesh(root,new THREE.CylinderGeometry(4.2,4.6,1.7,12),wall,0,.85,-12);mesh(root,new THREE.CylinderGeometry(4.35,4.35,.18,12),trim,0,1.78,-12);
   const mapPlate=mesh(root,new THREE.BoxGeometry(6,.08,3.6),material(map.color),0,1.95,-12);rotors.push({object:mapPlate,type:'screen',phase:0});
   sign(root,'MAPS / ROUTES',0,4,-17,'#90fff0',7);obstacles.push({x:0,z:-12,radius:4.8});
   for(let i=0;i<MAPS.length;i++){

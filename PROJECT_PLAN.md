@@ -1,5 +1,11 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
+## Active Work — Color, Camera and Progression (2026-09-29)
+
+The latest request enriches the headquarters palette and smooths the procedural human/zombie silhouettes. Desktop lobby look uses right-drag; mouse-wheel zoom reaches a following third-person view. Settings persist a 50°–100° FOV. Touch movement controls are restricted to coarse touch input. The inventory sorts base towers and keeps golden/evolved forms inside their parent tower. Six golden forms come from a 50,000-coin Golden crate. Explicit brainstorm level gates apply to Turret, Pursuit, and Gatling Gun; Hardcore and Voidcore require level 50, with a Hardcore victory additionally required for Voidcore. The public Survival ladder is Easy 20, Casual 25, Intermediate 30, Molten 35, and Fallen 40 waves. Victory rewards follow the supplied mode figures; loss rewards scale with progress and weekend account XP doubles. The 5-wave Beginner definition remains only for compatibility.
+
+Browser verification: 12/12 logic, 12/12 roster, 15/15 headquarters, and 7/7 lifecycle checks. The campaign lengths are data-verified; full live 20–50-wave balance runs and physical touch testing remain open.
+
 ## Active Work — First-Person Field and Preparation Hall (2026-09-28)
 
 The latest user request changes battle to a walkable first-person 3D view and replaces the shared staging geometry with a distinct preparation hall containing a map table, field armory, supplies, and a deployment portal. Copper Reach and Frostline are larger; Ember Pass and Verdant Loop add two long routes and distinct terrain colors. New profiles start with three equipped roles: Scout, Sniper, and Demoman; existing profiles receive the starter ownership while custom loadouts remain intact. A four-page first-visit tutorial explains headquarters, staging, battle, and rewards. Enemy hover reveals health; selected-tower upgrades appear beside the tower and show affordability. The reward screen shows a seven-visit daily track and a four-segment wheel whose pointer matches the granted reward. Tower scale, environment dressing, and beveled controls were enlarged and enriched.
