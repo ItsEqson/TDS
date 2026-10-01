@@ -24,7 +24,7 @@ export class WalkInput {
   }
   wheel=e=>{if(document.activeElement!==this.canvas||this.scene.app.ui.isOpen)return;e.preventDefault();this.scene.zoom(e.deltaY);};
   context=e=>{if(document.activeElement===this.canvas)e.preventDefault();};
-  move(e){if(this.look?.id!==e.pointerId)return;this.scene.look((e.clientX-this.look.x)*WALK.sensitivity,(e.clientY-this.look.y)*WALK.sensitivity);this.look.x=e.clientX;this.look.y=e.clientY;}
+  move(e){if(this.look?.id!==e.pointerId)return;const speed=WALK.sensitivity*this.scene.app.lookSensitivity;this.scene.look((e.clientX-this.look.x)*speed,(e.clientY-this.look.y)*speed);this.look.x=e.clientX;this.look.y=e.clientY;}
   release(e){this.touch.delete(e.pointerId);if(this.look?.id===e.pointerId)this.look=null;}
   held(name){for(const k of INPUT_MAP.walk[name])if(this.keys.has(k))return true;for(const direction of this.touch.values())if(direction===name)return true;return false;}
   axis(positive,negative){return Number(this.held(positive))-Number(this.held(negative));}

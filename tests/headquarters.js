@@ -50,8 +50,16 @@ test('Keyboard and multi-touch movement move, collide and clear on blur',()=>{
 test('FOV persists, zoom changes camera distance, and locked modes cannot stage',()=>{
  app.setFov(90);assert(store.data.fov===90&&app.active.camera.fov===90);const camera=app.active.camera.position.clone(),pose=app.active.pose;app.setZoom(6);assert(app.active.camera.position.distanceTo(camera)>4&&app.active.avatar.visible);app.ui.open('settings');assert(document.querySelector('#camera-fov')?.value==='90');app.ui.close();app.setZoom(0);assert(app.active.camera.position.x===pose.x&&!app.active.avatar.visible);app.selection.mode='hardcore';app.prepare();assert(app.kind==='hq');app.selection.mode='beginner';
 });
+test('Look sensitivity persists and inventory opens grouped by category',()=>{
+ app.setLookSensitivity(1.5);assert(store.data.lookSensitivity===1.5&&new SaveStore(store.storage).data.lookSensitivity===1.5);
+ app.ui.open('settings');assert(document.querySelector('#look-sensitivity')?.value==='1.5');app.ui.close();
+ app.ui.open('inventory');assert(document.querySelector('#roster-sort')?.value==='category');
+ const headings=[...document.querySelectorAll('.roster-heading')].map(x=>x.textContent);
+ assert(headings.join('|')==='Starter|Intermediate|Advanced|Hardcore & Evolved|Exclusive / Event',headings.join('|'));
+ app.ui.close();
+});
 test('Desktop look starts on right button and movement pad follows touch capability',()=>{
- const s=app.active,capture=canvas.setPointerCapture;canvas.setPointerCapture=()=>{};const pointer=(button,x)=>({button,pointerType:'mouse',pointerId:9,target:canvas,clientX:x,clientY:100,preventDefault:()=>{}});s.input.down(pointer(0,100));assert(!s.input.look);s.input.down(pointer(2,100));assert(s.input.look?.id===9);const yaw=s.pose.yaw;s.input.move(pointer(2,140));assert(s.pose.yaw!==yaw);s.input.release({pointerId:9});canvas.setPointerCapture=capture;const coarse=matchMedia('(hover:none) and (pointer:coarse)').matches;assert((getComputedStyle(document.querySelector('#walk-pad')).display==='grid')===coarse);
+ const s=app.active,capture=canvas.setPointerCapture;canvas.setPointerCapture=()=>{};const pointer=(button,x)=>({button,pointerType:'mouse',pointerId:9,target:canvas,clientX:x,clientY:100,preventDefault:()=>{}});s.input.down(pointer(0,100));assert(!s.input.look);s.input.down(pointer(2,100));assert(s.input.look?.id===9);const yaw=s.pose.yaw;s.input.move(pointer(2,140));assert(Math.abs((s.pose.yaw-yaw)+40*.004*app.lookSensitivity)<1e-8);s.input.release({pointerId:9});canvas.setPointerCapture=capture;const coarse=matchMedia('(hover:none) and (pointer:coarse)').matches;assert((getComputedStyle(document.querySelector('#walk-pad')).display==='grid')===coarse);
 });
 test('Empty loadouts block deploy; map and loadout lock at deployment',()=>{
  app.prepare();store.unequip(0);store.unequip(1);store.unequip(2);app.deploy();assert(!app.deploying);store.equip('prism-sentry',0);app.selectMap('frostline');app.deploy();assert(Object.isFrozen(app.mission)&&Object.isFrozen(app.mission.loadout));app.update(.1);assert(app.kind==='battle'&&app.active.battle.path===MAPS[1].path);

@@ -5,7 +5,7 @@ import { MODES } from '../data/headquarters.js';
 import { accountLevel,requiredTowerLevel,VARIANTS,GOLDEN_FORMS,baseTower } from '../data/progression.js';
 const KEY='copper-reach-profile-v1';
 const STARTERS=['prism-sentry','longwatch','blast-courier'];
-const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:[...STARTERS],loadout:[...STARTERS],forms:{},fov:68,skins:['standard'],skin:'standard',crates:0,goldenCrates:0,tickets:1,claims:[],loginDay:'',loginCount:0,tutorialSeen:false,codes:[],records:{},clearedModes:[],secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
+const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:[...STARTERS],loadout:[...STARTERS],forms:{},fov:68,lookSensitivity:1,skins:['standard'],skin:'standard',crates:0,goldenCrates:0,tickets:1,claims:[],loginDay:'',loginCount:0,tutorialSeen:false,codes:[],records:{},clearedModes:[],secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
 // Profile mutations and persistence have one owner. Invalid saves recover field by field.
 export class SaveStore {
   constructor(storage){
@@ -20,6 +20,7 @@ export class SaveStore {
     const p=initial();if(!raw||raw.version!==1)return p;
     for(const key of ['shards','coins','xp','wins','kills','played','missions','crates','goldenCrates','tickets','loginCount','flawless'])if(Number.isFinite(raw[key])&&raw[key]>=0)p[key]=Math.min(raw[key],1e9);
     if(Number.isFinite(raw.fov))p.fov=Math.max(50,Math.min(100,raw.fov));
+    if(Number.isFinite(raw.lookSensitivity))p.lookSensitivity=Math.max(.25,Math.min(2,raw.lookSensitivity));
     for(const key of ['claims','codes'])if(Array.isArray(raw[key]))p[key]=raw[key].filter(x=>typeof x==='string').slice(0,1000);
     if(Array.isArray(raw.clearedModes))p.clearedModes=[...new Set(raw.clearedModes.filter(x=>typeof x==='string'))];
     p.owned=[...new Set([...STARTERS,...(Array.isArray(raw.owned)?raw.owned.filter(id=>Object.hasOwn(TOWERS,id)):[])])];
@@ -41,6 +42,7 @@ export class SaveStore {
   save(){try{this.storage?.setItem(KEY,JSON.stringify(this.data));this.dirty=false;}catch{this.warning='Storage is full or disabled. Progress is session-only.';}}
   change(fn){const result=fn(this.data);this.save();return result;}
   setFov(value){return this.change(p=>p.fov=Math.max(50,Math.min(100,Math.round(value))));}
+  setLookSensitivity(value){return this.change(p=>p.lookSensitivity=Number.isFinite(value)?Math.max(.25,Math.min(2,Math.round(value*20)/20)):p.lookSensitivity);}
   setForm(base,form){return this.change(p=>{if(form==='standard'){delete p.forms[base];return true;}if(VARIANTS[form]!==base||!p.owned.includes(form)||!p.owned.includes(base))return false;p.forms[base]=form;return true;});}
   refreshPeriods(){
     const now=new Date(),day=now.toISOString().slice(0,10);const monday=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-(now.getUTCDay()+6)%7));const week=monday.toISOString().slice(0,10);

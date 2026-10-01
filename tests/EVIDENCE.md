@@ -104,3 +104,11 @@ Story/Hardcore/Event/Sandbox content, combat upgrades/evolution, extended shop c
 - Visually inspected the first-visit tutorial, distinct 3D preparation hall, four-map staging controls, and Ember Pass first-person battle. Placed a Scout by raycast, upgraded it, and observed the contextual panel switch from affordable to exact cash shortfall. Inspected the visible seven-visit daily track and spun the four-segment wheel; the displayed 60-coin result matched its final pointer segment. The main game reported no console warnings or errors during this run.
 - Inspected the 390×844 phone and 844×390 landscape layouts in nested browser viewports. The phone battle shows a movement pad alongside the field and keeps the loadout and wave controls reachable.
 - Native Chrome/Edge/Firefox, physical touch, and genuine hidden-tab/resume behavior remain unverified.
+
+## 2026-09-30 — Sensitivity, inventory order, and crowd attacks
+
+- Added a persisted 0.25×–2.00× mouse/touch look sensitivity setting shared by headquarters, staging, and battle. Existing saves default to 1.00×.
+- Inventory opens sorted into Starter, Intermediate, Advanced, Hardcore & Evolved, and Exclusive / Event. Evolved and golden forms remain inside their base tower cards. The Shotgunner role is in Intermediate; the four evolved roles carry an Evolved tier. Group names and this role placement were checked against the official Tower Defense Simulator Wiki, while the game's own IDs, models, and balance remain original.
+- Separated shared crowd attack kits: splash hits all in an impact radius; chain hops to nearby targets; pierce follows a narrow line; spread covers a cone. Existing support, status, economy, healing, and summon kits remain active.
+- Static Python server and in-app Chromium browser: 12/12 logic, 13/13 roster, 16/16 headquarters, and 7/7 lifecycle checks pass (48 total). The new roster check verifies the four crowd footprints, and headquarters checks cover persisted sensitivity, look scaling, category order, resize, and repeated scene cleanup/restart. Live inventory showed all five headings in order. No new main-game console errors were observed; the lifecycle harness logs a synthetic pointer-capture error during one direct handler test while all seven checks pass.
+- Native Chrome/Edge/Firefox and physical touch sensitivity remain unverified.

@@ -32,6 +32,17 @@ await test('Splash resolves groups; control respects boss immunity; poison ticks
  updateTower(createTower(4,0,0,TOWERS['spore-rifleman']),enemies,.1);assert(enemies[0].dotRemaining===3);
  const b=new WaveManager();b.enemies=enemies;const health=enemies[0].health;updateSpecialists(b,.1);assert(enemies[0].health<health);
 });
+await test('Crowd kits use distinct blast, chain, line and cone footprints',()=>{
+ const attack=(id,points)=>{const enemies=points.map(([x,z],i)=>{const e=createEnemy(i+1);e.x=x;e.z=z;e.progress=points.length-i;e.health=100;return e;});updateTower(createTower(99,0,0,TOWERS[id]),enemies,.1);return enemies.map(e=>e.health<100);};
+ const splash=attack('blast-courier',[[2,0],[2,2],[4,2]]);
+ const chain=attack('arc-thrower',[[2,0],[4,0],[6,0],[9,0]]);
+ const pierce=attack('wind-fletcher',[[2,0],[3,0],[3,2]]);
+ const spread=attack('breach-officer',[[2,0],[3,1],[3,2]]);
+ assert(splash[1]&&!splash[2],'Blast should stay centered on impact');
+ assert(chain[1]&&chain[2]&&!chain[3],'Chain should hop to a third contact');
+ assert(pierce[1]&&!pierce[2],'Pierce should follow a narrow line');
+ assert(spread[1]&&!spread[2],'Scatter should cover a limited cone');
+});
 await test('Income, healing, nonstacking support and friendly runners operate only during combat',()=>{
  const b=new WaveManager();b.towers=['supply-grower','field-mender','rally-officer','signal-captain','prism-sentry','contract-captain'].map((id,i)=>createTower(i,0,0,TOWERS[id]));b.health=5;const cash=b.cash;b.update(5);assert(b.cash===cash);b.start();for(let i=0;i<301;i++)b.update(1/60);assert(b.cash>=cash+12);assert(b.health>=6);assert(b.towers[4].attackBoost===1.25);assert(b.nextAllyId>0);
 });

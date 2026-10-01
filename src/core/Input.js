@@ -1,3 +1,4 @@
+import { WALK } from '../data/headquarters.js';
 export const INPUT_MAP=Object.freeze({
   cancel:'Escape',start:'Space',restart:'KeyR',place:0,cancelPointer:2,interact:'KeyE',
   walk:Object.freeze({forward:['KeyW'],back:['KeyS'],left:['KeyA'],right:['KeyD'],turnLeft:['ArrowLeft'],turnRight:['ArrowRight'],lookUp:['ArrowUp'],lookDown:['ArrowDown']})
@@ -25,8 +26,9 @@ export class Input {
     this.pad?.addEventListener('pointercancel',this.onPointerUp);
   }
   onMove(e){
-    if(this.touchLook?.id===e.pointerId){const t=this.touchLook,dx=e.clientX-t.x,dy=e.clientY-t.y;if(Math.hypot(e.clientX-t.startX,e.clientY-t.startY)>6)t.moved=true;if(t.moved)this.scene.look(dx*.004,dy*.004);t.x=e.clientX;t.y=e.clientY;return;}
-    if(this.lookDrag?.id===e.pointerId){this.scene.look((e.clientX-this.lookDrag.x)*.004,(e.clientY-this.lookDrag.y)*.004);this.lookDrag.x=e.clientX;this.lookDrag.y=e.clientY;return;}
+    const speed=WALK.sensitivity*(this.scene.app?.lookSensitivity||1);
+    if(this.touchLook?.id===e.pointerId){const t=this.touchLook,dx=e.clientX-t.x,dy=e.clientY-t.y;if(Math.hypot(e.clientX-t.startX,e.clientY-t.startY)>6)t.moved=true;if(t.moved)this.scene.look(dx*speed,dy*speed);t.x=e.clientX;t.y=e.clientY;return;}
+    if(this.lookDrag?.id===e.pointerId){this.scene.look((e.clientX-this.lookDrag.x)*speed,(e.clientY-this.lookDrag.y)*speed);this.lookDrag.x=e.clientX;this.lookDrag.y=e.clientY;return;}
     this.scene.point(e.clientX,e.clientY);
   }
   onPointerUp(e){

@@ -5,8 +5,9 @@ import { HeadquartersHud } from '../ui/HeadquartersHud.js';
 import { MAPS,MODES,OPERATION } from '../data/headquarters.js';
 import { Audio } from './Audio.js';
 export class SceneRouter {
-  constructor(canvas){this.canvas=canvas;this.store=new SaveStore();this.audio=new Audio();this.selection={map:'copper-reach',mode:'easy'};this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.fov=this.store.data.fov;this.zoom=0;this.width=1;this.height=1;this.kind='hq';this.pose=null;this.onVisibility=()=>{if(document.hidden)this.audio.suspend();else this.audio.resume();};}
+  constructor(canvas){this.canvas=canvas;this.store=new SaveStore();this.audio=new Audio();this.selection={map:'copper-reach',mode:'easy'};this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.fov=this.store.data.fov;this.lookSensitivity=this.store.data.lookSensitivity;this.zoom=0;this.width=1;this.height=1;this.kind='hq';this.pose=null;this.onVisibility=()=>{if(document.hidden)this.audio.suspend();else this.audio.resume();};}
   setFov(value){this.fov=this.store.setFov(value);if(this.active?.camera){this.active.camera.fov=this.fov;this.active.camera.updateProjectionMatrix();}}
+  setLookSensitivity(value){this.lookSensitivity=this.store.setLookSensitivity(value);}
   setZoom(value){this.zoom=Math.max(0,Math.min(12,value));document.body.classList.toggle('zoomed',this.zoom>1);this.active?.updateCamera?.();}
   get map(){return MAPS.find(m=>m.id===this.selection.map)||MAPS[0];}
   init(){this.ui=new HeadquartersHud(this);}
