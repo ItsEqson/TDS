@@ -1,6 +1,6 @@
 import { WALK } from '../data/headquarters.js';
 export const INPUT_MAP=Object.freeze({
-  cancel:'Escape',start:'Space',restart:'KeyR',place:0,cancelPointer:2,interact:'KeyE',
+  cancel:'Escape',start:'Space',restart:'KeyR',view:'KeyV',place:0,cancelPointer:2,interact:'KeyE',
   walk:Object.freeze({forward:['KeyW'],back:['KeyS'],left:['KeyA'],right:['KeyD'],turnLeft:['ArrowLeft'],turnRight:['ArrowRight'],lookUp:['ArrowUp'],lookDown:['ArrowDown']})
 });
 export class Input {
@@ -59,6 +59,7 @@ export class Input {
   onKey(e){
     if(document.activeElement!==this.canvas||e.ctrlKey||e.metaKey||e.altKey)return;
     if(Object.values(INPUT_MAP.walk).flat().includes(e.code)){e.preventDefault();this.keys.add(e.code);return;}
+    if(e.code===INPUT_MAP.view){e.preventDefault();if(!e.repeat)this.scene.toggleView();return;}
     let action=null;
     if(e.code===INPUT_MAP.cancel&&this.scene.canCancel())action='cancel';
     if(e.code===INPUT_MAP.start&&this.scene.battle.state==='PREP')action='start';

@@ -29,7 +29,7 @@ export class BattleScene {
     this.direction=new THREE.Vector3();
     this.hoverProbe=new THREE.Vector3();
     this.up=new THREE.Vector3(0,1,0);
-    this.hasPoint=false;this.yaw=0;this.pitch=.88;this.distance=32;this.hoveredEnemy=null;this.motionTime=0;
+    this.hasPoint=false;this.yaw=0;this.pitch=.88;this.firstPitch=0;this.distance=32;this.viewMode=app?.viewMode||'strategy';this.hoveredEnemy=null;this.motionTime=0;
   }
   init(){
     this.scene=new THREE.Scene();
@@ -237,7 +237,12 @@ export class BattleScene {
       this.walkX=THREE.MathUtils.clamp(this.walkX+(right*Math.cos(this.yaw)-forward*Math.sin(this.yaw))*speed,-ARENA.width/2+2,ARENA.width/2-2);
       this.walkZ=THREE.MathUtils.clamp(this.walkZ+(-forward*Math.cos(this.yaw)-right*Math.sin(this.yaw))*speed,-ARENA.depth/2+2,ARENA.depth/2-2);
       this.motionTime+=dt;
-      if(this.avatar){this.avatar.rotation.y=Math.atan2(right*Math.cos(this.yaw)-forward*Math.sin(this.yaw),-forward*Math.cos(this.yaw)-right*Math.sin(this.yaw));this.avatar.position.y=(forward||right)?Math.sin(this.motionTime*10)*.08:0;}
+      if(this.avatar){
+        const walking=!!(forward||right),stride=this.motionTime*10;
+        this.avatar.position.y=walking?Math.abs(Math.sin(stride))*.06:0;
+        this.avatar.userData.legs?.forEach((leg,i)=>leg.rotation.x=walking?Math.sin(stride+i*Math.PI)*.4:0);
+        this.avatar.userData.arms?.forEach((arm,i)=>arm.rotation.x=-.65+(walking?Math.sin(stride+i*Math.PI)*.16:0));
+      }
       this.updateCamera();
     }
     if(this.intro>0){this.intro=Math.max(0,this.intro-dt);this.message='Deployment flyover · tracing the approach to the relay';if(!this.intro)this.message=`Commander: Ground swarm inbound. Stop the ${FINAL_BOSSES[this.mission?.mode]||'final threat'} before it reaches the relay.`;this.hud.update();return;}
@@ -310,11 +315,21 @@ export class BattleScene {
     this.camera.updateProjectionMatrix();
     this.pointerOutside();
   }
-  look(dx,dy){this.yaw-=dx;this.pitch=THREE.MathUtils.clamp(this.pitch+dy,.25,1.42);this.updateCamera();}
-  zoomBy(amount){this.distance=THREE.MathUtils.clamp(this.distance+amount,12,75);this.updateCamera();}
+  look(dx,dy){this.yaw-=dx;if(this.viewMode==='strategy')this.pitch=THREE.MathUtils.clamp(this.pitch+dy,.25,1.42);else this.firstPitch=THREE.MathUtils.clamp(this.firstPitch-dy,-1.25,1.25);this.updateCamera();}
+  zoomBy(amount){if(this.viewMode==='first-person'){if(amount>0)this.toggleView();return;}this.distance=THREE.MathUtils.clamp(this.distance+amount,12,75);this.updateCamera();}
+  toggleView(){this.viewMode=this.viewMode==='strategy'?'first-person':'strategy';if(this.app)this.app.viewMode=this.viewMode;this.updateCamera();this.hud?.update();}
   updateCamera(){
     if(!this.camera)return;
-    if(this.avatar){this.avatar.visible=true;this.avatar.position.x=this.walkX;this.avatar.position.z=this.walkZ;}
+    if(this.avatar){
+      this.avatar.visible=this.viewMode==='strategy';this.avatar.position.x=this.walkX;this.avatar.position.z=this.walkZ;
+      this.avatar.rotation.y=this.yaw+Math.PI;
+      this.avatar.userData.head.rotation.x=THREE.MathUtils.clamp((this.pitch-.72)*.7,-.32,.48);
+    }
+    if(this.viewMode==='first-person'){
+      this.camera.position.set(this.walkX,WALK.eyeHeight,this.walkZ);
+      this.camera.rotation.set(this.firstPitch,this.yaw,0);
+      return;
+    }
     const horizontal=this.distance*Math.cos(this.pitch);
     this.camera.position.set(this.walkX+Math.sin(this.yaw)*horizontal,2+this.distance*Math.sin(this.pitch),this.walkZ+Math.cos(this.yaw)*horizontal);
     this.camera.lookAt(this.walkX,0,this.walkZ);

@@ -22,19 +22,20 @@ export function createTowerMesh(ghost=false,definition=TOWERS['prism-sentry']){
   const accent=material([0xffce45,0x39e5ff,0xff709d,0x9cff6b,0xb8a0ff][(d.appearance||0)%5]);
   accent.emissive.copy(accent.color);accent.emissiveIntensity=.18;
   cloth.name='uniform';
-  for(const x of [-.2,.2]){mesh(g,new THREE.CapsuleGeometry(.15,.34,4,8),dark,x,.4);mesh(g,new THREE.CapsuleGeometry(.12,.2,4,8),dark,x,.13,.08).rotation.x=Math.PI/2;}
+  for(const x of [-.2,.2]){const leg=mesh(g,new THREE.CapsuleGeometry(.15,.34,4,8),dark,x,.4);(g.userData.legs??=[]).push(leg);mesh(g,new THREE.CapsuleGeometry(.12,.2,4,8),dark,x,.13,.08).rotation.x=Math.PI/2;}
   mesh(g,new THREE.CylinderGeometry(.43,.38,.7,10),cloth,0,1.03);
-  mesh(g,new THREE.SphereGeometry(.32,12,8),skin,0,1.65);
-  mesh(g,new THREE.BoxGeometry(.57,.15,.52),cloth,0,1.93);
-  mesh(g,new THREE.BoxGeometry(.6,.07,.6),dark,0,1.82,.05);
+  const head=new THREE.Group();head.position.y=1.55;g.add(head);g.userData.head=head;
+  mesh(head,new THREE.SphereGeometry(.32,12,8),skin,0,.1);
+  mesh(head,new THREE.BoxGeometry(.57,.15,.52),cloth,0,.38);
+  mesh(head,new THREE.BoxGeometry(.6,.07,.6),dark,0,.27,.05);
   const style=(d.appearance||0)%5;
-  if(style===1)mesh(g,new THREE.BoxGeometry(.12,.32,.43),metal,0,2.08);
-  if(style===2)mesh(g,new THREE.BoxGeometry(.68,.08,.7),cloth,0,1.9);
-  if(style===3)for(const x of [-.3,.3])mesh(g,new THREE.BoxGeometry(.12,.28,.25),dark,x,1.72);
-  if(style===4)mesh(g,new THREE.BoxGeometry(.52,.13,.06),metal,0,1.68,.26);
+  if(style===1)mesh(head,new THREE.BoxGeometry(.12,.32,.43),metal,0,.53);
+  if(style===2)mesh(head,new THREE.BoxGeometry(.68,.08,.7),cloth,0,.35);
+  if(style===3)for(const x of [-.3,.3])mesh(head,new THREE.BoxGeometry(.12,.28,.25),dark,x,.17);
+  if(style===4)mesh(head,new THREE.BoxGeometry(.52,.13,.06),metal,0,.13,.26);
   if(['Advanced','Hardcore','Exclusive','Golden'].includes(d.tier))for(const x of [-.44,.44])mesh(g,new THREE.BoxGeometry(.32,.18,.44),metal,x,1.4);
-  for(const x of [-.13,.13])mesh(g,new THREE.BoxGeometry(.07,.06,.03),dark,x,1.67,.24);
-  for(const x of [-.47,.47]){const arm=mesh(g,new THREE.CapsuleGeometry(.12,.34,4,8),cloth,x,1.13,.13);arm.rotation.x=-.65;mesh(g,new THREE.SphereGeometry(.11,8,6),skin,x,.97,.32);}
+  for(const x of [-.13,.13])mesh(head,new THREE.BoxGeometry(.07,.06,.03),dark,x,.12,.24);
+  for(const x of [-.47,.47]){const arm=mesh(g,new THREE.CapsuleGeometry(.12,.34,4,8),cloth,x,1.13,.13);arm.rotation.x=-.65;(g.userData.arms??=[]).push(arm);mesh(g,new THREE.SphereGeometry(.11,8,6),skin,x,.97,.32);}
   mesh(g,new THREE.BoxGeometry(.42,.45,.23),dark,0,1.1,-.32);
   // Layered armor, utility belt, seams and equipment lights read at both camera scales.
   mesh(g,new THREE.BoxGeometry(.49,.34,.07),dark,0,1.14,.235);
@@ -47,7 +48,7 @@ export function createTowerMesh(ghost=false,definition=TOWERS['prism-sentry']){
     mesh(g,new THREE.BoxGeometry(.08,.44,.035),metal,x,1.1,.25);
     mesh(g,new THREE.BoxGeometry(.25,.08,.25),accent,x*1.9,1.32,.14);
   }
-  mesh(g,new THREE.BoxGeometry(.42,.04,.025),accent,0,1.88,.315);
+  mesh(head,new THREE.BoxGeometry(.42,.04,.025),accent,0,.33,.315);
   for(const x of [-.13,.13])mesh(g,new THREE.CylinderGeometry(.055,.055,.36,6),accent,x,1.15,-.48);
   const kit=d.kit;
   if(d.sourceRole==='Brawler'){

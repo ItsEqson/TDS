@@ -48,7 +48,7 @@ test('Keyboard and multi-touch movement move, collide and clear on blur',()=>{
  const s=app.active;canvas.focus();const before=s.camera.position.z;canvas.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyW',bubbles:true,cancelable:true}));for(let i=0;i<30;i++)s.update(1/60);window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyW'}));assert(s.camera.position.z<before);for(let i=0;i<1000;i++){s.input.keys.add('KeyW');s.update(1/60);}assert(s.camera.position.z>-13,'Walked through terminal');window.dispatchEvent(new Event('blur'));assert(s.input.keys.size===0);s.input.touch.set(7,'right');const x=s.camera.position.x;s.update(.1);assert(s.camera.position.x>x);document.dispatchEvent(new Event('visibilitychange'));assert(s.input.touch.size===0);
 });
 test('FOV persists, zoom changes camera distance, and locked modes cannot stage',()=>{
- app.setFov(90);assert(store.data.fov===90&&app.active.camera.fov===90);const camera=app.active.camera.position.clone(),pose=app.active.pose;app.setZoom(6);assert(app.active.camera.position.distanceTo(camera)>4&&app.active.avatar.visible);app.ui.open('settings');assert(document.querySelector('#camera-fov')?.value==='90');app.ui.close();app.setZoom(0);assert(app.active.camera.position.x===pose.x&&!app.active.avatar.visible);app.selection.mode='hardcore';app.prepare();assert(app.kind==='hq');app.selection.mode='beginner';
+ app.setFov(90);assert(store.data.fov===90&&app.active.camera.fov===90);const camera=app.active.camera.position.clone();app.setZoom(12);assert(app.active.camera.position.distanceTo(camera)>4&&app.active.avatar.visible);app.ui.open('settings');assert(document.querySelector('#camera-fov')?.value==='90');app.ui.close();app.setZoom(32);app.active.toggleView();assert(app.active.camera.position.y===2.2&&!app.active.avatar.visible&&document.querySelector('#lobby-view-mode').textContent.includes('Overhead'));app.active.toggleView();assert(app.active.avatar.visible);app.selection.mode='hardcore';app.prepare();assert(app.kind==='hq');app.selection.mode='beginner';
 });
 test('Look sensitivity persists and inventory opens grouped by category',()=>{
  app.setLookSensitivity(1.5);assert(store.data.lookSensitivity===1.5&&new SaveStore(store.storage).data.lookSensitivity===1.5);
@@ -67,9 +67,12 @@ test('Empty loadouts block deploy; map and loadout lock at deployment',()=>{
 test('Battle camera stays overhead, pans, zooms, and tilts at long distance',()=>{
  const s=app.active;const first=s.camera.position.clone();assert(first.y>10&&s.avatar.visible);
  s.zoomBy(18);assert(s.camera.position.distanceTo(first)>10);
- const high=s.camera.position.y;s.look(0,.2);assert(s.camera.position.y>high);
+ const high=s.camera.position.y,head=s.avatar.userData.head.rotation.x;s.look(0,.2);assert(s.camera.position.y>high&&s.avatar.userData.head.rotation.x>head,'Commander did not look down');
+ s.look(0,-.4);assert(s.avatar.userData.head.rotation.x<head,'Commander did not look up');
  const x=s.walkX;s.input.keys.add('KeyD');s.update(.1);s.input.keys.clear();assert(s.walkX>x);
  s.zoomBy(-100);assert(s.distance===12);
+ s.toggleView();assert(s.camera.position.y===2.2&&!s.avatar.visible&&document.querySelector('#view-mode').textContent.includes('Overhead'));
+ s.look(0,.15);assert(s.firstPitch<0);s.toggleView();assert(s.avatar.visible);
 });
 test('Mission result pays exactly once and a terminal restart resets without duplicate rewards',()=>{
  const b=app.active.battle;app.active.chooseTower('prism-sentry');app.active.x=-11;app.active.z=0;app.active.hasPoint=true;app.active.click();for(let i=0;i<100000&&!app.active.terminal;i++){if(b.state==='PREP')app.active.start();app.active.update(1/60);}assert(app.active.terminal);const n=store.data.coins;app.active.update(1);app.active.render(renderer,1);assert(store.data.coins===n);app.active.restart();assert(app.active.battle.state==='PREP'&&app.active.battle.cash===200&&store.data.coins===n);

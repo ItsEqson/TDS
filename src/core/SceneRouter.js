@@ -5,10 +5,10 @@ import { HeadquartersHud } from '../ui/HeadquartersHud.js';
 import { MAPS,MODES,OPERATION } from '../data/headquarters.js';
 import { Audio } from './Audio.js';
 export class SceneRouter {
-  constructor(canvas){this.canvas=canvas;this.store=new SaveStore();this.audio=new Audio();this.selection={map:'copper-reach',mode:'easy'};this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.fov=this.store.data.fov;this.lookSensitivity=this.store.data.lookSensitivity;this.zoom=0;this.width=1;this.height=1;this.kind='hq';this.pose=null;this.onVisibility=()=>{if(document.hidden)this.audio.suspend();else this.audio.resume();};}
+  constructor(canvas){this.canvas=canvas;this.store=new SaveStore();this.audio=new Audio();this.selection={map:'copper-reach',mode:'easy'};this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.fov=this.store.data.fov;this.lookSensitivity=this.store.data.lookSensitivity;this.zoom=32;this.viewMode='strategy';this.width=1;this.height=1;this.kind='hq';this.pose=null;this.onVisibility=()=>{if(document.hidden)this.audio.suspend();else this.audio.resume();};}
   setFov(value){this.fov=this.store.setFov(value);if(this.active?.camera){this.active.camera.fov=this.fov;this.active.camera.updateProjectionMatrix();}}
   setLookSensitivity(value){this.lookSensitivity=this.store.setLookSensitivity(value);}
-  setZoom(value){this.zoom=Math.max(0,Math.min(12,value));document.body.classList.toggle('zoomed',this.zoom>1);this.active?.updateCamera?.();}
+  setZoom(value){this.zoom=Math.max(12,Math.min(75,value));document.body.classList.toggle('zoomed',this.zoom>24);this.active?.updateCamera?.();}
   get map(){return MAPS.find(m=>m.id===this.selection.map)||MAPS[0];}
   init(){this.ui=new HeadquartersHud(this);}
   enter(){this.go('hq');document.addEventListener('visibilitychange',this.onVisibility);if(!this.store.data.tutorialSeen)this.ui.open('tutorial');if(this.store.warning)this.ui.notify(this.store.warning);}

@@ -5,7 +5,6 @@ import { WAVE } from '../data/waves.js';
 import { MODE_CAMPAIGNS } from '../data/modeCampaigns.js';
 import { towerStats,upgradeCost,TOWER_SPECIAL } from '../gameplay/Tower.js';
 import { canHit } from '../gameplay/Targeting.js';
-import * as THREE from 'three';
 export class Hud {
   constructor(scene){
     this.scene=scene;
@@ -22,7 +21,8 @@ export class Hud {
     this.panel=document.querySelector('#tower-panel');
     this.panel.innerHTML='<strong id="selected-name"></strong><span id="selected-level"></span><span id="selected-stats"></span><span id="selected-special"></span><button data-action="upgrade" id="tower-upgrade"></button><button data-action="sell" id="tower-sell"></button>';
     this.panelName=this.panel.querySelector('#selected-name');this.panelLevel=this.panel.querySelector('#selected-level');this.panelStats=this.panel.querySelector('#selected-stats');this.panelSpecial=this.panel.querySelector('#selected-special');this.upgradeButton=this.panel.querySelector('#tower-upgrade');this.sellButton=this.panel.querySelector('#tower-sell');
-    this.projected=new THREE.Vector3();this.enemyTip=document.createElement('div');this.enemyTip.id='enemy-tip';this.enemyTip.hidden=true;this.enemyTip.innerHTML='<strong></strong><span></span><div><i></i></div>';document.querySelector('#viewport').append(this.enemyTip);
+    this.viewButton=document.querySelector('#view-mode');
+    this.enemyTip=document.createElement('div');this.enemyTip.id='enemy-tip';this.enemyTip.hidden=true;this.enemyTip.innerHTML='<strong></strong><span></span><div><i></i></div>';document.querySelector('#viewport').append(this.enemyTip);
     const back=document.querySelector('#return-hq');if(back)back.hidden=!scene.app;
   }
   onAction(e){
@@ -40,6 +40,7 @@ export class Hud {
   }
   update(){
     const s=this.scene,b=s.battle;
+    this.viewButton.textContent=s.viewMode==='strategy'?'First person · V':'Overhead · V';
     this.set('cash',String(b.cash));
     this.set('health',b.health+' / '+WAVE.baseHealth);
     this.set('remaining',String(b.remaining));
@@ -65,14 +66,7 @@ export class Hud {
     const bounds=this.scene.canvas.getBoundingClientRect();this.enemyTip.style.left=Math.min(bounds.width-180,Math.max(8,this.enemyX-bounds.left+16))+'px';this.enemyTip.style.top=Math.max(8,this.enemyY-bounds.top-68)+'px';
     this.enemyTip.querySelector('strong').textContent=enemy.name;this.enemyTip.querySelector('span').textContent=`${Math.ceil(enemy.health)} / ${enemy.maxHealth} HP${enemy.hidden?' · Hidden':''}${enemy.flying?' · Flying':''}${enemy.leadProtection>0?' · Lead':''}`;this.enemyTip.querySelector('i').style.width=100*enemy.health/enemy.maxHealth+'%';
   }
-  positionTowerPanel(){
-    if(this.panel.hidden)return;const s=this.scene,r=s.canvas.getBoundingClientRect();this.projected.set(s.selected.x,2.7,s.selected.z).project(s.camera);
-    const behind=this.projected.z>1||this.projected.z< -1;this.panel.classList.toggle('offscreen',behind);
-    if(behind)return;
-    const width=Math.min(310,r.width-24),height=this.panel.offsetHeight||170;
-    this.panel.style.left=Math.min(r.right-width-12,Math.max(r.left+12,r.left+(this.projected.x+1)*r.width/2+24))+'px';
-    this.panel.style.top=Math.min(r.bottom-height-12,Math.max(r.top+12,r.top+(1-this.projected.y)*r.height/2-height/2))+'px';
-  }
+  positionTowerPanel(){}
   dispose(){
     this.root.removeEventListener('click',this.onAction);
     this.enemyTip.remove();

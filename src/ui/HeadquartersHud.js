@@ -32,6 +32,7 @@ export class HeadquartersHud {
     if(markup!==this.loadoutMarkup){document.querySelector('#loadout').innerHTML=markup;this.loadoutMarkup=markup;}
   }
   setPrompt(text){const node=document.querySelector('#walk-prompt');if(node.textContent!==text)node.textContent=text;}
+  setViewMode(mode){document.querySelector('#lobby-view-mode').textContent=mode==='strategy'?'First person · V':'Overhead · V';}
   notify(text){this.toast.textContent=text;this.toast.hidden=false;this.feedback.textContent=text;this.feedback.hidden=false;this.toastTime=5;this.refreshBar();}
   setDeploying(value){document.querySelector('#deploy-overlay').hidden=!value;this.root.inert=value;}
   onCancel(e){e.preventDefault();this.close();}
@@ -106,6 +107,7 @@ export class HeadquartersHud {
       case 'tutorial-prev':this.tutorialStep=Math.max(0,this.tutorialStep-1);this.draw();return;
       case 'open':this.open(value);return;
       case 'interact':this.app.active.interact();return;
+      case 'view':this.app.active.toggleView();this.app.canvas.focus({preventScroll:true});return;
       case 'hq':this.app.go('hq');return;
       case 'mode':{const mode=MODES.find(m=>m.id===value);if(!mode||!this.app.canPlay(mode))return;this.app.selection.mode=value;this.app.prepare();return;}
       case 'map':this.app.selectMap(value);return;

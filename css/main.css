@@ -107,3 +107,29 @@ button:active:not(:disabled){transform:translateY(3px);box-shadow:inset 0 2px #f
 @media(max-width:650px),(pointer:coarse){body[data-scene=battle] #battle-walk-pad{display:grid}}
 @media(prefers-reduced-motion:reduce){button{transition:none}#tower-panel .affordable{animation:none}}
 .roster-heading{grid-column:1/-1;margin:12px 0 0;color:#f5deb1}
+
+/* Battle controls float at the edges so the 3D field keeps the whole viewport. */
+body[data-scene=battle] #game{display:block;position:relative;height:100dvh;min-height:0;overflow:hidden}
+body[data-scene=battle] #viewport{position:absolute;inset:0;width:100%;height:100%}
+body[data-scene=battle] header{position:absolute;z-index:4;top:0;left:0;right:0;min-height:58px;padding:8px 16px;gap:14px;background:linear-gradient(180deg,#10203bdc,#10203b72);border:0;pointer-events:none}
+body[data-scene=battle] header .eyebrow{display:none}
+body[data-scene=battle] header h1{font-size:16px;margin:0;white-space:nowrap}
+body[data-scene=battle] .stats{gap:14px;align-items:center;min-width:0}
+body[data-scene=battle] .stats div{font-size:9px;white-space:nowrap}
+body[data-scene=battle] .stats strong{font-size:14px;margin-top:1px}
+body[data-scene=battle] #state{font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-top:0}
+body[data-scene=battle] footer{position:absolute;z-index:4;left:0;right:0;bottom:0;padding:8px 12px;background:linear-gradient(0deg,#101d34ea,#101d3499 72%,transparent);border:0;pointer-events:none}
+body[data-scene=battle] footer .actions{flex-wrap:nowrap;gap:7px;overflow-x:auto;scrollbar-width:thin}
+body[data-scene=battle] footer button{pointer-events:auto;padding:7px 10px;font-size:11px;white-space:nowrap;box-shadow:none}
+body[data-scene=battle] #battle-loadout{gap:6px;min-width:0}
+body[data-scene=battle] #battle-loadout button{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+body[data-scene=battle] #battle-loadout .tower-portrait{width:25px;height:25px}
+body[data-scene=battle] #battle-loadout small{font-size:9px;margin:0;color:#c7d9e8}
+body[data-scene=battle] #return-hq{margin-left:auto}
+body[data-scene=battle] #hint{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);max-width:min(480px,70vw);padding:4px 10px;margin:0;border-radius:7px;background:#14243bbd;text-align:center;font-size:11px;line-height:1.3;pointer-events:none}
+body[data-scene=battle] footer .help{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body[data-scene=battle] #tower-panel{position:fixed;left:auto;right:12px;top:auto;bottom:76px;width:min(255px,calc(100vw - 24px));max-height:min(42vh,270px);overflow:auto;padding:9px;gap:3px;font-size:11px;box-shadow:0 8px 20px #020c2399;pointer-events:auto}
+body[data-scene=battle] #tower-panel span{font-size:10px}
+body[data-scene=battle] #tower-panel button{padding:6px 8px;width:100%;white-space:normal}
+body[data-scene=battle] #boss-status{position:fixed;top:58px;left:50%;transform:translateX(-50%);padding:5px 12px;border-radius:0 0 8px 8px;background:#432638dc;font-size:11px;pointer-events:none}
+@media(max-width:650px){body[data-scene=battle] header{padding:5px 8px;min-height:50px}body[data-scene=battle] header h1{display:none}body[data-scene=battle] .stats{gap:8px;width:100%;justify-content:space-between}body[data-scene=battle] #state{max-width:118px;font-size:10px}body[data-scene=battle] .stats strong{font-size:12px}body[data-scene=battle] footer{padding:5px}body[data-scene=battle] #tower-panel{bottom:67px;max-height:35vh}body[data-scene=battle] #hint{max-width:80vw;font-size:10px}}

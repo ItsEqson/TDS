@@ -12,6 +12,7 @@ export class WalkInput {
   }
   key(e){
     if(e.ctrlKey||e.metaKey||e.altKey)return;
+    if(e.code===INPUT_MAP.view){e.preventDefault();if(!e.repeat&&!this.scene.app.ui.isOpen)this.scene.toggleView();return;}
     if(Object.values(INPUT_MAP.walk).flat().includes(e.code)){e.preventDefault();this.keys.add(e.code);}
     if(e.code===INPUT_MAP.interact){e.preventDefault();if(!e.repeat)this.scene.interact();}
   }
