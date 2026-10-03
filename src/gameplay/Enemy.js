@@ -2,7 +2,8 @@ import { WAYPOINTS, SEGMENTS, PATH_LENGTH } from '../data/arena.js';
 import { ENEMY } from '../data/enemies.js';
 export function createEnemy(id,path=WAYPOINTS,stats={}){
   return {
-    id,x:path[0].x,z:path[0].z,previousX:path[0].x,previousZ:path[0].z,progress:0,segment:0,segmentProgress:0,health:stats.health||ENEMY.health,maxHealth:stats.health||ENEMY.health,speed:stats.speed||ENEMY.speedUnitsPerSecond,boss:!!stats.boss,resolved:false
+    id,name:stats.name||'Road contact',x:path[0].x,z:path[0].z,previousX:path[0].x,previousZ:path[0].z,progress:0,segment:0,segmentProgress:0,health:stats.health??ENEMY.health,maxHealth:stats.health??ENEMY.health,speed:stats.speed??ENEMY.speedUnitsPerSecond,boss:!!stats.boss,resolved:false,
+    hidden:!!stats.hidden,flying:!!stats.flying,leadProtection:stats.lead?Math.max(1,Math.ceil((stats.health??ENEMY.health)*.2)):0,defense:stats.defense||0,splitInto:stats.splitInto||null,summons:stats.summons||null,stuns:!!stats.stuns,heals:!!stats.heals,abilityTimer:6,abilitiesUsed:0
   };
 }
 export function moveEnemy(e,dt,segments=SEGMENTS,pathLength=PATH_LENGTH){

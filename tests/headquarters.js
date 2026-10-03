@@ -64,6 +64,13 @@ test('Desktop look starts on right button and movement pad follows touch capabil
 test('Empty loadouts block deploy; map and loadout lock at deployment',()=>{
  app.prepare();store.unequip(0);store.unequip(1);store.unequip(2);app.deploy();assert(!app.deploying);store.equip('prism-sentry',0);app.selectMap('frostline');app.deploy();assert(Object.isFrozen(app.mission)&&Object.isFrozen(app.mission.loadout));app.update(.1);assert(app.kind==='battle'&&app.active.battle.path===MAPS[1].path);
 });
+test('Battle camera stays overhead, pans, zooms, and tilts at long distance',()=>{
+ const s=app.active;const first=s.camera.position.clone();assert(first.y>10&&s.avatar.visible);
+ s.zoomBy(18);assert(s.camera.position.distanceTo(first)>10);
+ const high=s.camera.position.y;s.look(0,.2);assert(s.camera.position.y>high);
+ const x=s.walkX;s.input.keys.add('KeyD');s.update(.1);s.input.keys.clear();assert(s.walkX>x);
+ s.zoomBy(-100);assert(s.distance===12);
+});
 test('Mission result pays exactly once and a terminal restart resets without duplicate rewards',()=>{
  const b=app.active.battle;app.active.chooseTower('prism-sentry');app.active.x=-11;app.active.z=0;app.active.hasPoint=true;app.active.click();for(let i=0;i<100000&&!app.active.terminal;i++){if(b.state==='PREP')app.active.start();app.active.update(1/60);}assert(app.active.terminal);const n=store.data.coins;app.active.update(1);app.active.render(renderer,1);assert(store.data.coins===n);app.active.restart();assert(app.active.battle.state==='PREP'&&app.active.battle.cash===200&&store.data.coins===n);
 });

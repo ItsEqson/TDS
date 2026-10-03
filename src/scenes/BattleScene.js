@@ -27,8 +27,9 @@ export class BattleScene {
     this.towerMeshes=new Map();
     this.enemyMeshes=new Map();this.allyMeshes=new Map();
     this.direction=new THREE.Vector3();
+    this.hoverProbe=new THREE.Vector3();
     this.up=new THREE.Vector3(0,1,0);
-    this.hasPoint=false;this.yaw=0;this.pitch=-.22;this.hoveredEnemy=null;
+    this.hasPoint=false;this.yaw=0;this.pitch=.88;this.distance=32;this.hoveredEnemy=null;this.motionTime=0;
   }
   init(){
     this.scene=new THREE.Scene();
@@ -44,8 +45,7 @@ export class BattleScene {
     this.ghost.visible=false;
     this.scene.add(this.ghost);
     this.avatar=createTowerMesh(false,{...TOWERS['signal-captain'],color:0x51a7c2});this.avatar.scale.setScalar(1.1);this.scene.add(this.avatar);
-    this.walkX=0;this.walkZ=15;this.camera.position.set(this.walkX,WALK.eyeHeight,this.walkZ);
-    this.camera.rotation.set(this.pitch,this.yaw,0);
+    this.walkX=0;this.walkZ=0;this.updateCamera();
     this.range=createRange();
     this.scene.add(this.range);
     this.scene.updateMatrixWorld(true);
@@ -138,6 +138,15 @@ export class BattleScene {
       const hit=this.raycaster.intersectObject(model,true)[0];
       if(hit&&hit.distance<enemyDistance){this.hoveredEnemy=this.battle.enemies.find(e=>e.id===id)||null;enemyDistance=hit.distance;}
     }
+    if(!this.hoveredEnemy){
+      let closest=24*24;
+      for(const [id,model] of this.enemyMeshes){
+        this.hoverProbe.set(model.position.x,1.2+model.position.y,model.position.z).project(this.camera);
+        if(this.hoverProbe.z< -1||this.hoverProbe.z>1)continue;
+        const dx=(this.hoverProbe.x-this.pointer.x)*r.width*.5,dy=(this.hoverProbe.y-this.pointer.y)*r.height*.5,distance=dx*dx+dy*dy;
+        if(distance<closest){closest=distance;this.hoveredEnemy=this.battle.enemies.find(e=>e.id===id)||null;}
+      }
+    }
     this.hud?.showEnemy(this.hoveredEnemy,clientX,clientY);
     this.hits.length=0;
     this.raycaster.intersectObject(this.terrain,false,this.hits);
@@ -224,9 +233,11 @@ export class BattleScene {
   }
   update(dt){
     if(this.input){const forward=this.input.axis('forward','back'),right=this.input.axis('right','left'),length=Math.hypot(forward,right)||1;
-      const speed=WALK.speed*dt/length;
-      this.walkX=THREE.MathUtils.clamp(this.walkX+(right*Math.cos(this.yaw)-forward*Math.sin(this.yaw))*speed,-ARENA.width/2+1,ARENA.width/2-1);
-      this.walkZ=THREE.MathUtils.clamp(this.walkZ+(-forward*Math.cos(this.yaw)-right*Math.sin(this.yaw))*speed,-ARENA.depth/2+1,ARENA.depth/2-1);
+      const speed=WALK.speed*1.6*dt/length;
+      this.walkX=THREE.MathUtils.clamp(this.walkX+(right*Math.cos(this.yaw)-forward*Math.sin(this.yaw))*speed,-ARENA.width/2+2,ARENA.width/2-2);
+      this.walkZ=THREE.MathUtils.clamp(this.walkZ+(-forward*Math.cos(this.yaw)-right*Math.sin(this.yaw))*speed,-ARENA.depth/2+2,ARENA.depth/2-2);
+      this.motionTime+=dt;
+      if(this.avatar){this.avatar.rotation.y=Math.atan2(right*Math.cos(this.yaw)-forward*Math.sin(this.yaw),-forward*Math.cos(this.yaw)-right*Math.sin(this.yaw));this.avatar.position.y=(forward||right)?Math.sin(this.motionTime*10)*.08:0;}
       this.updateCamera();
     }
     if(this.intro>0){this.intro=Math.max(0,this.intro-dt);this.message='Deployment flyover · tracing the approach to the relay';if(!this.intro)this.message=`Commander: Ground swarm inbound. Stop the ${FINAL_BOSSES[this.mission?.mode]||'final threat'} before it reaches the relay.`;this.hud.update();return;}
@@ -248,16 +259,21 @@ export class BattleScene {
     for(const e of this.battle.enemies){
       let model=this.enemyMeshes.get(e.id);
       if(!model){
-        model=createEnemyMesh(['fallen','hardcore','voidcore'].includes(this.mission?.mode));
+        model=createEnemyMesh(['fallen','hardcore','voidcore'].includes(this.mission?.mode),e);
         this.scene.add(model);
         this.enemyMeshes.set(e.id,model);
       }
-      model.position.set(e.previousX+(e.x-e.previousX)*alpha,0,e.previousZ+(e.z-e.previousZ)*alpha);
+      model.position.set(e.previousX+(e.x-e.previousX)*alpha,model.userData.flying?.6:0,e.previousZ+(e.z-e.previousZ)*alpha);
       if(e.x!==e.previousX||e.z!==e.previousZ)model.rotation.y=Math.atan2(e.x-e.previousX,e.z-e.previousZ);
       if(e.boss)model.scale.setScalar(1.7);
+      if(model.userData.armor)model.userData.armor.visible=e.leadProtection>0;
       model.userData.health.visible=this.hoveredEnemy?.id===e.id;
       model.userData.health.scale.x=e.health/e.maxHealth;
-      model.userData.legs.forEach((leg,i)=>leg.rotation.x=Math.sin(e.progress*3+i*Math.PI)*.32);
+      const stride=e.progress*(e.speed>4?5:3.5);
+      model.userData.legs?.forEach((leg,i)=>leg.rotation.x=Math.sin(stride+i*Math.PI)*.48);
+      model.userData.arms?.forEach((arm,i)=>arm.rotation.x=-.7-Math.sin(stride+i*Math.PI)*.26);
+      if(model.userData.body)model.userData.body.position.y=Math.abs(Math.sin(stride))*.08;
+      if(model.userData.flying)model.position.y=.55+Math.sin(this.motionTime*3+e.id)*.15;
     }
     for(const [id,model] of this.enemyMeshes){
       if(!this.battle.enemies.some(e=>e.id===id)){
@@ -268,10 +284,13 @@ export class BattleScene {
     }
     for(const t of this.battle.towers){
       const {
-        beam
+        beam,model
       }
       =this.towerMeshes.get(t.id);
-      beam.visible=t.beamRemaining>0&&!this.terminal;
+      const firing=t.beamRemaining>0&&!this.terminal;
+      model.rotation.x=firing?-.09*Math.min(1,t.beamRemaining/.12):0;
+      model.position.y=firing?-.045*Math.sin(this.motionTime*30):0;
+      beam.visible=firing;
       if(beam.visible){
         this.direction.set(t.targetX-t.x,.75-1.7,t.targetZ-t.z);
         const length=this.direction.length();
@@ -291,8 +310,15 @@ export class BattleScene {
     this.camera.updateProjectionMatrix();
     this.pointerOutside();
   }
-  look(dx,dy){this.yaw-=dx;this.pitch=THREE.MathUtils.clamp(this.pitch-dy,-1.25,1.25);}
-  updateCamera(){const d=this.app?.zoom||0;if(this.avatar){this.avatar.visible=d>1;this.avatar.position.set(this.walkX,0,this.walkZ);this.avatar.rotation.y=this.yaw+Math.PI;}if(d>0){this.camera.position.set(this.walkX+Math.sin(this.yaw)*d,WALK.eyeHeight+d*.26,this.walkZ+Math.cos(this.yaw)*d);this.camera.lookAt(this.walkX-Math.sin(this.yaw)*2,WALK.eyeHeight-Math.sin(this.pitch)*2,this.walkZ-Math.cos(this.yaw)*2);}else{this.camera.position.set(this.walkX,WALK.eyeHeight,this.walkZ);this.camera.rotation.set(this.pitch,this.yaw,0);}}
+  look(dx,dy){this.yaw-=dx;this.pitch=THREE.MathUtils.clamp(this.pitch+dy,.25,1.42);this.updateCamera();}
+  zoomBy(amount){this.distance=THREE.MathUtils.clamp(this.distance+amount,12,75);this.updateCamera();}
+  updateCamera(){
+    if(!this.camera)return;
+    if(this.avatar){this.avatar.visible=true;this.avatar.position.x=this.walkX;this.avatar.position.z=this.walkZ;}
+    const horizontal=this.distance*Math.cos(this.pitch);
+    this.camera.position.set(this.walkX+Math.sin(this.yaw)*horizontal,2+this.distance*Math.sin(this.pitch),this.walkZ+Math.cos(this.yaw)*horizontal);
+    this.camera.lookAt(this.walkX,0,this.walkZ);
+  }
   chooseTower(id){if(!this.mission?.loadout.includes(id))return;this.towerId=id;this.place();}
   headquarters(){this.app?.go('hq');}
   exit(){

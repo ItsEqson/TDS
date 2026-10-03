@@ -77,7 +77,7 @@ export class Input {
       this.scene.cancelledContext=false;
     }
   }
-  onWheel(e){if(document.activeElement!==this.canvas)return;e.preventDefault();this.scene.app?.setZoom((this.scene.app.zoom||0)+Math.sign(e.deltaY)*1.5);}
+  onWheel(e){if(document.activeElement!==this.canvas)return;e.preventDefault();if(this.scene.zoomBy)this.scene.zoomBy(Math.sign(e.deltaY)*3);else this.scene.app?.setZoom((this.scene.app.zoom||0)+Math.sign(e.deltaY)*1.5);}
   dispose(){
     const c=this.canvas;
     c.removeEventListener('pointermove',this.onMove);

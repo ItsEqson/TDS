@@ -63,22 +63,23 @@ try{
       assert(added===initialListeners,'Duplicate listeners');
     }
   });
-  test('First-person camera stays finite at desktop and narrow aspect ratios',()=>{
+  test('Strategy camera stays finite at desktop and narrow aspect ratios',()=>{
     for(const [w,h] of [[1280,550],[390,550],[652,300]]){
       scene.resize(w,h);
       assert(scene.camera.aspect===w/h&&Number.isFinite(scene.camera.position.x)&&Number.isFinite(scene.camera.position.z),'Invalid camera');
     }
   });
   test('Enemy hover exposes current health and clears on pointer exit',()=>{
-    const enemy=createEnemy(777),cameraPosition=scene.camera.position.clone(),cameraRotation=scene.camera.rotation.clone();
-    scene.battle.enemies.push(enemy);scene.camera.position.set(enemy.x+4,2.2,enemy.z);scene.camera.lookAt(enemy.x,1,enemy.z);scene.camera.updateMatrixWorld(true);scene.render(renderer,1);
+    const enemy=createEnemy(777),focusX=scene.walkX,focusZ=scene.walkZ;
+    enemy.x=enemy.previousX=0;enemy.z=enemy.previousZ=0;
+    scene.battle.enemies.push(enemy);scene.walkX=0;scene.walkZ=0;scene.updateCamera();scene.camera.updateMatrixWorld(true);scene.render(renderer,1);
     const screen=new THREE.Vector3(enemy.x,1,enemy.z).project(scene.camera),r=scene.canvas.getBoundingClientRect();
     scene.point(r.left+(screen.x+1)*r.width/2,r.top+(1-screen.y)*r.height/2);
-    assert(scene.hoveredEnemy===enemy&&!scene.hud.enemyTip.hidden&&scene.hud.enemyTip.textContent.includes('10 / 10 HP'),'Enemy health missing');
+    assert(scene.hoveredEnemy===enemy&&!scene.hud.enemyTip.hidden&&scene.hud.enemyTip.textContent.includes('10 / 10 HP'),`Enemy health missing: hovered ${scene.hoveredEnemy?.id}, meshes ${scene.enemyMeshes.size}, screen ${screen.x},${screen.y}, pointer ${scene.pointer.x},${scene.pointer.y}, tip ${scene.hud.enemyTip.textContent}`);
     scene.pointerOutside();assert(scene.hud.enemyTip.hidden,'Hover remained after exit');
-    scene.battle.enemies.pop();scene.render(renderer,1);scene.camera.position.copy(cameraPosition);scene.camera.rotation.copy(cameraRotation);
+    scene.battle.enemies.pop();scene.render(renderer,1);scene.walkX=focusX;scene.walkZ=focusZ;scene.updateCamera();
   });
-  test('Touch movement and drag-look steer the first-person camera',()=>{
+  test('Touch movement and drag-look steer the strategy camera',()=>{
     const x=scene.walkX,yaw=scene.yaw;scene.input.touchDirections.set(99,'right');scene.update(.2);assert(scene.walkX>x,'Touch movement did not advance');scene.input.touchDirections.clear();
     scene.input.touchLook={id:77,x:100,y:100,startX:100,startY:100,moved:false};scene.input.onMove({pointerId:77,clientX:140,clientY:110});assert(scene.yaw!==yaw&&scene.input.touchLook.moved,'Touch drag did not turn');scene.input.onPointerUp({pointerId:77,type:'pointercancel'});assert(scene.input.touchLook===null);scene.walkX=x;scene.yaw=yaw;
   });

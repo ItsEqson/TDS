@@ -71,18 +71,47 @@ export function createTowerMesh(ghost=false,definition=TOWERS['prism-sentry']){
   if(ghost)g.traverse(o=>{if(o.material){o.material.transparent=true;o.material.opacity=.45;o.material.depthWrite=false;o.castShadow=false;}});
   return g;
 }
-export function createEnemyMesh(voidZombie=false){
-  const g=new THREE.Group(),skin=material(voidZombie?0x8558bc:0x8ecb65),rags=surfaceMaterial(voidZombie?0x43255f:0x466476,'cloth'),eye=material(voidZombie?0xed8fff:0xffdf65);
+export function createEnemyMesh(voidZombie=false,enemy=null){
+  const name=enemy?.name||'',code=[...name].reduce((n,char)=>(n*31+char.charCodeAt(0))>>>0,7);
+  const shade=code%4,g=new THREE.Group(),skin=material(voidZombie?[0x8558bc,0x6b91bc,0xb480ba,0x8e719f][shade]:[0x8ecb65,0xa7b973,0x7ac0a3,0xb4a376][shade]),rags=surfaceMaterial(voidZombie?[0x43255f,0x304461,0x583957,0x35355d][shade]:[0x466476,0x695e59,0x456b59,0x5c647a][shade],'cloth'),eye=material(voidZombie?0xed8fff:0xffdf65);
+  // Name-derived color and equipment give each campaign type a stable silhouette.
+  const accentColor=new THREE.Color().setHSL(((code*0.61803398875)%1),.68,.53);
+  const accent=material(accentColor),trim=material(accentColor.clone().multiplyScalar(.48));
   eye.emissive.copy(eye.color);eye.emissiveIntensity=.65;
   for(const x of [-.2,.2]){const leg=mesh(g,new THREE.CapsuleGeometry(.16,.32,4,8),rags,x,.38);(g.userData.legs??=[]).push(leg);}
-  mesh(g,new THREE.CylinderGeometry(.4,.34,.67,10),rags,0,.99);
+  const body=mesh(g,new THREE.CylinderGeometry(.4,.34,.67,10),rags,0,.99);g.userData.body=body;
   mesh(g,new THREE.SphereGeometry(.33,12,8),skin,0,1.57);
-  for(const x of [-.47,.47]){const arm=mesh(g,new THREE.CapsuleGeometry(.13,.4,4,8),skin,x,1.1,.28);arm.rotation.x=-1;}
+  for(const x of [-.47,.47]){const arm=mesh(g,new THREE.CapsuleGeometry(.13,.4,4,8),skin,x,1.1,.28);arm.rotation.x=-1;(g.userData.arms??=[]).push(arm);}
   for(const x of [-.14,.14])mesh(g,new THREE.BoxGeometry(.13,.08,.03),eye,x,1.62,.25);
   mesh(g,new THREE.BoxGeometry(.23,.07,.03),rags,0,1.42,.25);
   for(const x of [-.24,.24])mesh(g,new THREE.BoxGeometry(.09,.26,.025),skin,x,1.02,.215);
   for(const x of [-.07,.04])mesh(g,new THREE.BoxGeometry(.045,.055,.025),eye,x,1.43,.28);
   if(voidZombie)for(const x of [-.24,.24])mesh(g,new THREE.ConeGeometry(.12,.45,4),eye,x,1.96);
+  const shape=code%7;
+  if(shape===0)mesh(g,new THREE.ConeGeometry(.36,.48,5),accent,0,2.03);
+  if(shape===1)mesh(g,new THREE.BoxGeometry(.72,.16,.5),accent,0,1.94);
+  if(shape===2)for(const x of [-.25,.25])mesh(g,new THREE.ConeGeometry(.13,.55,4),accent,x,2.04);
+  if(shape===3)mesh(g,new THREE.OctahedronGeometry(.34),accent,0,1.99);
+  if(shape===4){mesh(g,new THREE.TorusGeometry(.36,.08,5,12),accent,0,1.94).rotation.x=Math.PI/2;}
+  if(shape===5)mesh(g,new THREE.CylinderGeometry(.29,.38,.37,6),accent,0,1.99);
+  if(shape===6)for(const x of [-.27,.27])mesh(g,new THREE.BoxGeometry(.14,.42,.22),accent,x,1.96);
+  const gear=(code>>>4)%5;
+  if(gear===0)mesh(g,new THREE.BoxGeometry(.78,.3,.18),trim,0,1.1,.35);
+  if(gear===1)for(const x of [-.47,.47])mesh(g,new THREE.BoxGeometry(.34,.22,.38),accent,x,1.36);
+  if(gear===2)mesh(g,new THREE.OctahedronGeometry(.28),accent,0,1.12,.4);
+  if(gear===3)mesh(g,new THREE.ConeGeometry(.25,.55,5),trim,0,1.25,-.43);
+  if(gear===4)for(const x of [-.25,.25])mesh(g,new THREE.BoxGeometry(.12,.47,.08),accent,x,1.03,.31);
+  if(/Skeleton|Corpse/.test(name)){for(const x of [-.2,.2])mesh(g,new THREE.BoxGeometry(.1,.42,.07),material(0xe6dbc4),x,1,.26);}
+  if(/Slime|Experiment|Mandrake|Mandragora/.test(name))mesh(g,new THREE.DodecahedronGeometry(.39),accent,0,.93,.13);
+  if(/Mech|Armor|Armored|Lead|Knight|Squire|Guard|Bulwark/.test(name))for(const x of [-.4,.4])mesh(g,new THREE.BoxGeometry(.26,.39,.34),trim,x,1.2);
+  if(/Molten|Boomer|Hound/.test(name)){accent.emissive.copy(accent.color);accent.emissiveIntensity=.55;}
+  if(/Boss|King|Warlord|Reaver|Zero|Digger/.test(name))mesh(g,new THREE.TorusGeometry(.45,.07,5,8),accent,0,2.27).rotation.x=Math.PI/2;
+  if(enemy?.hidden){const ring=mesh(g,new THREE.TorusGeometry(.52,.055,5,16),material(0x9fe8f2),0,1.05,0);ring.rotation.x=Math.PI/2;}
+  if(enemy?.flying){mesh(g,new THREE.SphereGeometry(.43,10,8),material(0xf2bd68),0,2.92);mesh(g,new THREE.CylinderGeometry(.014,.014,.55,5),material(0x66647a),0,2.35);g.userData.flying=true;}
+  if(enemy?.leadProtection>0){const armor=new THREE.Group();g.add(armor);mesh(armor,new THREE.BoxGeometry(.78,.45,.18),material(0xb6c1c8),0,1.08,.35);for(const x of [-.38,.38])mesh(armor,new THREE.BoxGeometry(.23,.28,.27),material(0x879ba8),x,1.4);g.userData.armor=armor;}
+  if(enemy?.splitInto)for(const x of [-.33,.33])mesh(g,new THREE.SphereGeometry(.2,7,5),material(0xe7a779),x,1.08,.28);
+  if(enemy?.summons){mesh(g,new THREE.CylinderGeometry(.035,.035,1.5,5),material(0xa3a9ca),.6,1.25,.15);mesh(g,new THREE.OctahedronGeometry(.18),eye,.6,2.05,.15);}
+  if(enemy?.boss){mesh(g,new THREE.ConeGeometry(.4,.55,6),material(0xc8a167),0,2.18);}
   g.userData.health=mesh(g,new THREE.BoxGeometry(.85,.07,.06),material(0xc9efb6),0,2.25);
   return g;
 }

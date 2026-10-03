@@ -4,9 +4,10 @@ import { WAVE } from '../data/waves.js';
 import { updateSpecialists } from './specialists.js';
 import { TOWERS } from '../data/towers.js';
 import { activeTower } from '../data/progression.js';
-import { OPERATION,MODES } from '../data/headquarters.js';
+import { OPERATION,MODES,FINAL_BOSSES } from '../data/headquarters.js';
 import { WAYPOINTS } from '../data/arena.js';
-import { ENEMY } from '../data/enemies.js';
+import { ENEMY,campaignEnemy } from '../data/enemies.js';
+import { MODE_CAMPAIGNS } from '../data/modeCampaigns.js';
 import { placementReason } from './Placement.js';
 import { createEnemy, moveEnemy, resolveEnemy } from './Enemy.js';
 import { createTower, updateTower,upgradeCost } from './Tower.js';
@@ -15,6 +16,7 @@ export class WaveManager {
   constructor(mission=null){
     this.mission=mission;
     this.mode=MODES.find(m=>m.id===mission?.mode);
+    this.campaign=MODE_CAMPAIGNS[mission?.mode]||null;
     this.totalWaves=this.mode?.waves||1;
     this.path=mission?.path||WAYPOINTS;
     this.segments=this.path.slice(1).map((end,i)=>({start:this.path[i],end,length:Math.hypot(end.x-this.path[i].x,end.z-this.path[i].z)}));
@@ -28,10 +30,13 @@ export class WaveManager {
     this.cash=WAVE.startingCash;
     this.health=WAVE.baseHealth;
     this.spawned=0;
+    this.nextEnemyId=0;
     this.killed=0;
     this.arrived=0;
     this.elapsed=0;
     this.nextSpawn=0;
+    this.spawnPlan=this.campaign?.waves[0]?.flatMap(([name,count])=>Array(count).fill(name))||null;
+    this.count=this.spawnPlan?.length||(this.mission?OPERATION.count:WAVE.count);
     this.enemies=[];
     this.towers=[];this.allies=[];this.nextAllyId=0;
   }
@@ -43,7 +48,8 @@ export class WaveManager {
   start(){
     if(!this.transition(STATES.WAVE_ACTIVE))return false;
     this.spawned=0;this.nextSpawn=0;this.elapsedWave=0;
-    this.count=this.mission?OPERATION.count+Math.min(this.wave-1,8)*2:WAVE.count;
+    this.spawnPlan=this.campaign?.waves[this.wave-1]?.flatMap(([name,count])=>Array(count).fill(name))||null;
+    this.count=this.spawnPlan?.length||(this.mission?OPERATION.count+Math.min(this.wave-1,8)*2:WAVE.count);
     return true;
   }
   upgrade(id){
@@ -64,6 +70,14 @@ export class WaveManager {
   }
   get remaining(){
     return this.count-this.spawned+this.enemies.length;
+  }
+  spawnCampaignEnemy(name,parent=null){
+    const definition=campaignEnemy(this.mission.mode,name);
+    if(!definition)return null;
+    const enemy=createEnemy(++this.nextEnemyId,this.path,{...definition,speed:definition.speedUnitsPerSecond,boss:name===FINAL_BOSSES[this.mission.mode]||name==='Void Caster'});
+    if(parent){enemy.x=enemy.previousX=parent.x;enemy.z=enemy.previousZ=parent.z;enemy.progress=parent.progress;enemy.segment=parent.segment;enemy.segmentProgress=parent.segmentProgress;}
+    this.enemies.push(enemy);
+    return enemy;
   }
   place(x,z,towerId='prism-sentry'){
     const definition=activeTower(towerId,this.mission?.forms);
@@ -89,15 +103,24 @@ export class WaveManager {
       this.health=Math.max(0,this.health-(e.boss?OPERATION.bossDamage:ENEMY.baseDamage));
       if(this.health===0)this.transition(STATES.LOST);
     }
-    else {this.killed++;if(this.mission)this.cash+=e.boss?OPERATION.bossCash:OPERATION.killCash;}
+    else {
+      this.killed++;if(this.mission)this.cash+=e.boss?OPERATION.bossCash:OPERATION.killCash;
+      for(const name of e.splitInto||[])this.spawnCampaignEnemy(name,e);
+    }
   }
   update(dt){
     if(this.state!==STATES.WAVE_ACTIVE)return;
     while(this.spawned<this.count&&this.elapsedWave+1e-9>=this.nextSpawn){
-      const boss=!!this.mission&&this.wave===this.totalWaves&&this.spawned===this.count-1;
+      const name=this.spawnPlan?.[this.spawned];
+      const definition=name?campaignEnemy(this.mission.mode,name):null;
+      const boss=definition?name===FINAL_BOSSES[this.mission.mode]:!!this.mission&&this.wave===this.totalWaves&&this.spawned===this.count-1;
       const multiplier=['challenge','hardcore','voidcore'].includes(this.mission?.mode)?OPERATION.challengeSpeed:1;
       const waveScale=(1+(this.wave-1)*.15)*(this.mode?.healthScale||1);
-      this.enemies.push(createEnemy(++this.spawned,this.path,this.mission?{health:Math.ceil((boss?OPERATION.bossHealth:ENEMY.health)*waveScale),speed:(boss?OPERATION.bossSpeed:ENEMY.speedUnitsPerSecond)*multiplier*(1+(this.wave-1)*.025),boss}:{}));
+      this.spawned++;
+      if(definition){
+        this.spawnCampaignEnemy(name);
+        if(this.mission.mode==='voidcore'&&name==='Void Reaver')this.spawnCampaignEnemy('Void Caster');
+      }else this.enemies.push(createEnemy(++this.nextEnemyId,this.path,this.mission?{health:Math.ceil((boss?OPERATION.bossHealth:ENEMY.health)*waveScale),speed:(boss?OPERATION.bossSpeed:ENEMY.speedUnitsPerSecond)*multiplier*(1+(this.wave-1)*.025),boss}:{}));
       this.nextSpawn+=WAVE.spawnIntervalSeconds;
     }
     this.elapsed+=dt;
@@ -105,6 +128,9 @@ export class WaveManager {
     updateSpecialists(this,dt);
     for(const e of this.enemies){
       if(e.resolved)continue;
+      if(e.summons&&e.abilitiesUsed<4){e.abilityTimer-=dt;if(e.abilityTimer<=0){this.spawnCampaignEnemy(e.summons,e);e.abilityTimer=6;e.abilitiesUsed++;}}
+      if(e.stuns){e.abilityTimer-=dt;if(e.abilityTimer<=0){for(const t of this.towers)if((t.x-e.x)**2+(t.z-e.z)**2<49)t.stunRemaining=2;e.abilityTimer=8;}}
+      if(e.heals){for(const ally of this.enemies)if(ally!==e&&!ally.resolved&&(ally.x-e.x)**2+(ally.z-e.z)**2<25)ally.health=Math.min(ally.maxHealth,ally.health+dt*6);}
       if(moveEnemy(e,dt,this.segments,this.pathLength))this.resolve(e,true);
       if(isTerminal(this.state))break;
     }
@@ -115,7 +141,7 @@ export class WaveManager {
     }
     for(let i=this.enemies.length-1;i>=0;i--)if(this.enemies[i].resolved)this.enemies.splice(i,1);
     if(this.state===STATES.WAVE_ACTIVE&&this.spawned===this.count&&this.enemies.length===0&&this.health>0){
-      if(this.wave<this.totalWaves){this.cash+=20+this.wave*12;this.wave++;this.state=STATES.PREP;}
+      if(this.wave<this.totalWaves){this.cash+=20+this.wave*12;this.wave++;this.state=STATES.PREP;this.spawned=0;this.spawnPlan=this.campaign?.waves[this.wave-1]?.flatMap(([name,count])=>Array(count).fill(name))||null;this.count=this.spawnPlan?.length||(this.mission?OPERATION.count+Math.min(this.wave-1,8)*2:WAVE.count);}
       else this.transition(STATES.WON);
     }
   }

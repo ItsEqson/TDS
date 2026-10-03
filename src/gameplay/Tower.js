@@ -1,6 +1,6 @@
 import { SPECIALIST as S } from '../data/specialists.js';
 import { TOWER } from '../data/towers.js';
-import { selectTarget } from './Targeting.js';
+import { selectTarget,canHit } from './Targeting.js';
 export function createTower(id,x,z,definition=TOWER){
   return {
     id,x,z,definition,level:0,invested:definition.cost,damageDone:0,cooldown:0,shotId:0,beamRemaining:0,targetX:x,targetZ:z,chainHits:new Set()
@@ -18,6 +18,7 @@ export function updateTower(t,enemies,dt){
   const stats=towerStats(t);
   t.beamRemaining=Math.max(0,t.beamRemaining-dt);
   t.cooldown=Math.max(0,t.cooldown-dt);
+  if(t.stunRemaining>0){t.stunRemaining=Math.max(0,t.stunRemaining-dt);return null;}
   if(t.cooldown>1e-9||['support','heal','economy','summon'].includes(definition.kit))return null;
   const target=selectTarget(t,enemies,stats.range);
   if(!target)return null;
@@ -27,9 +28,9 @@ export function updateTower(t,enemies,dt){
   t.targetZ=target.z;
   t.shotId++;
   if(definition.kit==='beam'){t.beamStacks=t.lastTargetId===target.id?Math.min(4,(t.beamStacks||0)+1):0;t.lastTargetId=target.id;}
-  const hit=e=>{const before=e.health,bonus=definition.kit==='rifle'&&e.boss?1.35:definition.kit==='rapid'?1.2:definition.kit==='pistol'&&t.shotId%4===0?1.5:definition.kit==='beam'?1+(t.beamStacks||0)*.12:definition.kit==='melee'&&e.boss?1.2:1;e.health=Math.max(0,e.health-stats.damage*bonus);t.damageDone+=before-e.health;if((['slow','freeze'].includes(definition.kit)||definition.kit==='melee'&&t.level>=2)&&!e.boss){e.slowRemaining=S.slowSeconds;e.slowFactor=definition.kit==='freeze'?0:S.slowFactor;}if(['burn','poison','bleed'].includes(definition.kit)){e.dotRemaining=S.dotSeconds;e.dotDamage=S.dotDamagePerSecond*(1+t.level*.25);e.dotSource=t;}};
+  const hit=e=>{const before=e.health,bonus=definition.kit==='rifle'&&e.boss?1.35:definition.kit==='rapid'?1.2:definition.kit==='pistol'&&t.shotId%4===0?1.5:definition.kit==='beam'?1+(t.beamStacks||0)*.12:definition.kit==='melee'&&e.boss?1.2:1;const damage=stats.damage*bonus*(1-(e.defense||0));e.health=Math.max(0,e.health-damage);e.leadProtection=Math.max(0,(e.leadProtection||0)-damage);t.damageDone+=before-e.health;if((['slow','freeze'].includes(definition.kit)||definition.kit==='melee'&&t.level>=2)&&!e.boss){e.slowRemaining=S.slowSeconds;e.slowFactor=definition.kit==='freeze'?0:S.slowFactor;}if(['burn','poison','bleed'].includes(definition.kit)){e.dotRemaining=S.dotSeconds;e.dotDamage=S.dotDamagePerSecond*(1+t.level*.25);e.dotSource=t;}};
   hit(target);
-  const eligible=e=>e!==target&&!e.resolved&&e.health>0;
+  const eligible=e=>e!==target&&!e.resolved&&e.health>0&&canHit(t,e);
   if(definition.kit==='splash'){
     for(const e of enemies)if(eligible(e)&&Math.hypot(e.x-target.x,e.z-target.z)<=S.splashRadius)hit(e);
   }else if(definition.kit==='chain'){

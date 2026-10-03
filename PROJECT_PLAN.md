@@ -1,5 +1,15 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
+## Active Work — Strategy Camera and Enemy Readability (2026-10-02)
+
+Battle now opens in a third-person overhead strategy view. WASD pans the field, the wheel zooms from close inspection to a wide view, and right-drag or touch-drag orbits and tilts at every zoom level. The commander follows the pan focus; walkers, flyers, and firing towers have visible motion. Campaign enemy names produce stable procedural colors, headgear, and equipment silhouettes, with additional shapes for key traits. Supplied base HP remains fixed per enemy type within each mode, including later waves and summoned copies. Tests cover every supplied wave entry and repeated HP, and browser checks cover camera movement, hover, resize, restart, and resource cleanup. Full campaign balance and individually authored boss attacks remain open.
+
+## Active Work — Supplied Mode Campaigns (2026-10-01)
+
+The seven public modes now use the user's supplied natural wave groups and enemy base HP: Easy 20, Casual 25, Intermediate 30, Molten 35, Fallen 40, Hardcore 45, and Voidcore 50. Void Caster joins the Void Reaver encounter as a summoned companion. Enemies have distinct procedural colors and 3D trait markers. Core shared trait rules cover hidden and flying detection, lead protection, defense, splitting, summoning, healing, and tower stuns. The five-wave legacy training definition remains internal. Individually authored boss abilities, shields, regeneration, and full-run balance verification remain open.
+
+Browser verification: 12/12 logic, 15/15 roster, 16/16 headquarters, and 7/7 lifecycle checks. A live Easy deployment showed the supplied wave 1 roster; complete multi-hour 20–50-wave runs have not been verified.
+
 ## Active Work — Color, Camera and Progression (2026-09-29)
 
 The latest request enriches the headquarters palette and smooths the procedural human/zombie silhouettes. Desktop lobby look uses right-drag; mouse-wheel zoom reaches a following third-person view. Settings persist a 50°–100° FOV. Touch movement controls are restricted to coarse touch input. The inventory sorts base towers and keeps golden/evolved forms inside their parent tower. Six golden forms come from a 50,000-coin Golden crate. Explicit brainstorm level gates apply to Turret, Pursuit, and Gatling Gun; Hardcore and Voidcore require level 50, with a Hardcore victory additionally required for Voidcore. The public Survival ladder is Easy 20, Casual 25, Intermediate 30, Molten 35, and Fallen 40 waves. Victory rewards follow the supplied mode figures; loss rewards scale with progress and weekend account XP doubles. The 5-wave Beginner definition remains only for compatibility.

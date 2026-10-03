@@ -1,5 +1,11 @@
 # Phase 1 verification evidence
 
+## 2026-10-01 supplied mode campaigns
+
+Served the game through a static Python HTTP server and checked it in the embedded browser. Results: 12/12 logic, 15/15 roster, 16/16 headquarters, and 7/7 lifecycle checks. The roster checks validate all seven campaign lengths, first-wave names and HP, final-wave bosses, natural-spawn totals, detection, lead protection, splitting, and summoning. The import helper validates that every natural-spawn name is in its mode roster.
+
+In the live UI, Survival listed Easy 20, Casual 25, Intermediate 30, Molten 35, and Fallen 40. Easy staging and deployment showed `Wave 1/20 · PREP · Incoming: 4 Normal`, four contacts, and the active wave started. Portrait and landscape viewport overrides were exercised. No new console error was observed on the final game origin; earlier stale-module errors belonged to a previous test origin. Complete live 20–50-wave balance runs and individualized boss abilities remain unverified.
+
 ## 2026-09-29 color, camera, progression and mode pass
 
 Served the project with `python -m http.server 8765` and checked it in the embedded browser. The current suites passed: 12/12 logic, 12/12 roster, 15/15 headquarters, and 7/7 lifecycle. The headquarters suite now checks persistent FOV, zoom distance, right-button look, touch-only pad visibility, mode locks, resizing, and repeated scene/GPU cleanup. The roster suite checks level locks, base-tower alternate forms, the 50,000-coin Golden crate, deployed golden stats, exact Survival wave counts, listed triumph rewards, partial loss rewards, and restart state.
@@ -112,3 +118,6 @@ Story/Hardcore/Event/Sandbox content, combat upgrades/evolution, extended shop c
 - Separated shared crowd attack kits: splash hits all in an impact radius; chain hops to nearby targets; pierce follows a narrow line; spread covers a cone. Existing support, status, economy, healing, and summon kits remain active.
 - Static Python server and in-app Chromium browser: 12/12 logic, 13/13 roster, 16/16 headquarters, and 7/7 lifecycle checks pass (48 total). The new roster check verifies the four crowd footprints, and headquarters checks cover persisted sensitivity, look scaling, category order, resize, and repeated scene cleanup/restart. Live inventory showed all five headings in order. No new main-game console errors were observed; the lifecycle harness logs a synthetic pointer-capture error during one direct handler test while all seven checks pass.
 - Native Chrome/Edge/Firefox and physical touch sensitivity remain unverified.
+# 2026-10-02 — supplied campaigns, strategy camera, and enemy visuals
+
+Served the repository on `127.0.0.1:8011` in the in-app browser. Results: 12/12 logic, 18/18 roster, 17/17 headquarters, and 7/7 lifecycle checks. The roster suite verifies every supplied natural wave group has a defined enemy, tests its fixed base HP, and checks repeated and reinforcement spawns. A live Easy battle showed wave 1's four Normal contacts, a placed Scout dealt 16 damage, wave 1 cleared, and wave 2 showed its Normal/Speedy preview. The overhead camera and map were visually inspected at 1280×720. No console errors were reported. Full 20–50-wave live runs and cross-browser/device checks remain open.

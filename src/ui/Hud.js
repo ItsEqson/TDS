@@ -2,8 +2,9 @@ import { TOWER,TOWERS } from '../data/towers.js';
 import { activeTower } from '../data/progression.js';
 import { portrait } from './art.js';
 import { WAVE } from '../data/waves.js';
+import { MODE_CAMPAIGNS } from '../data/modeCampaigns.js';
 import { towerStats,upgradeCost,TOWER_SPECIAL } from '../gameplay/Tower.js';
-import { FINAL_BOSSES } from '../data/headquarters.js';
+import { canHit } from '../gameplay/Targeting.js';
 import * as THREE from 'three';
 export class Hud {
   constructor(scene){
@@ -42,16 +43,18 @@ export class Hud {
     this.set('cash',String(b.cash));
     this.set('health',b.health+' / '+WAVE.baseHealth);
     this.set('remaining',String(b.remaining));
-    this.set('state',`Wave ${b.wave}/${b.totalWaves} · ${b.state}`);
+    const groups=MODE_CAMPAIGNS[s.mission?.mode]?.waves[b.wave-1];
+    const preview=b.state==='PREP'&&groups?' · Incoming: '+groups.slice(0,3).map(([name,count])=>`${count} ${name}`).join(', ')+(groups.length>3?` +${groups.length-3} groups`:''):'';
+    this.set('state',`Wave ${b.wave}/${b.totalWaves} · ${b.state}${preview}`);
     this.nodes.start.disabled=b.state!=='PREP'||s.intro>0;
     this.nodes.start.hidden=s.terminal;
     this.nodes.restart.hidden=!s.terminal;
     this.nodes.place.disabled=s.terminal||s.intro>0;
     this.nodes.place.hidden=!!s.mission;
-    const boss=b.enemies.find(e=>e.boss);const bossHud=document.querySelector('#boss-status');if(bossHud){bossHud.hidden=!boss;bossHud.textContent=boss?(FINAL_BOSSES[s.mission?.mode]||'Hollow Brute')+' · '+Math.ceil(boss.health)+' / '+boss.maxHealth:'';}
+    const boss=b.enemies.find(e=>e.boss);const bossHud=document.querySelector('#boss-status');if(bossHud){bossHud.hidden=!boss;bossHud.textContent=boss?boss.name+' · '+Math.ceil(boss.health)+' / '+boss.maxHealth:'';}
     this.nodes.place.setAttribute('aria-pressed',String(s.placing));
     this.panel.hidden=!s.selected||s.terminal;
-    if(!this.panel.hidden){const t=s.selected,stats=towerStats(t),cost=upgradeCost(t),sell=Math.floor(t.invested*.6);this.panelName.textContent=t.definition.name;this.panelLevel.textContent=`Level ${t.level}/5 · ${t.definition.role}`;this.panelStats.textContent=`Damage ${stats.damage} · Range ${stats.range} m · Attack ${stats.intervalSeconds} s · Total dealt ${Math.floor(t.damageDone)}`;this.panelSpecial.textContent=TOWER_SPECIAL[t.definition.kit]||'';this.upgradeButton.disabled=cost===null||b.cash<cost;this.upgradeButton.classList.toggle('affordable',cost!==null&&b.cash>=cost);this.upgradeButton.textContent=cost===null?'Max level':b.cash>=cost?`Upgrade ready · ${cost} cash`:`Need ${cost-b.cash} more cash`;this.sellButton.textContent=`Sell · ${sell} cash`;}
+    if(!this.panel.hidden){const t=s.selected,stats=towerStats(t),cost=upgradeCost(t),sell=Math.floor(t.invested*.6);this.panelName.textContent=t.definition.name;this.panelLevel.textContent=`Level ${t.level}/5 · ${t.definition.role}`;this.panelStats.textContent=`Damage ${stats.damage} · Range ${stats.range} m · Attack ${stats.intervalSeconds} s · Total dealt ${Math.floor(t.damageDone)}`;const detects=['Hidden','Flying','Lead'].filter(kind=>canHit(t,{hidden:kind==='Hidden',flying:kind==='Flying',leadProtection:kind==='Lead'?1:0}));this.panelSpecial.textContent=(TOWER_SPECIAL[t.definition.kit]||'')+` · Handles ${detects.join(', ')||'basic contacts'}`;this.upgradeButton.disabled=cost===null||b.cash<cost;this.upgradeButton.classList.toggle('affordable',cost!==null&&b.cash>=cost);this.upgradeButton.textContent=cost===null?'Max level':b.cash>=cost?`Upgrade ready · ${cost} cash`:`Need ${cost-b.cash} more cash`;this.sellButton.textContent=`Sell · ${sell} cash`;}
     if(s.hoveredEnemy)this.showEnemy(s.hoveredEnemy);
     this.set('outcome',b.state==='WON'?'Route secured.':b.state==='LOST'?'Base breached.':'');
     this.set('hint',s.message);
@@ -60,7 +63,7 @@ export class Hud {
     this.enemyTip.hidden=!enemy;if(!enemy)return;
     if(Number.isFinite(x))this.enemyX=x;if(Number.isFinite(y))this.enemyY=y;
     const bounds=this.scene.canvas.getBoundingClientRect();this.enemyTip.style.left=Math.min(bounds.width-180,Math.max(8,this.enemyX-bounds.left+16))+'px';this.enemyTip.style.top=Math.max(8,this.enemyY-bounds.top-68)+'px';
-    this.enemyTip.querySelector('strong').textContent=enemy.boss?'Boss contact':'Road contact';this.enemyTip.querySelector('span').textContent=`${Math.ceil(enemy.health)} / ${enemy.maxHealth} HP`;this.enemyTip.querySelector('i').style.width=100*enemy.health/enemy.maxHealth+'%';
+    this.enemyTip.querySelector('strong').textContent=enemy.name;this.enemyTip.querySelector('span').textContent=`${Math.ceil(enemy.health)} / ${enemy.maxHealth} HP${enemy.hidden?' · Hidden':''}${enemy.flying?' · Flying':''}${enemy.leadProtection>0?' · Lead':''}`;this.enemyTip.querySelector('i').style.width=100*enemy.health/enemy.maxHealth+'%';
   }
   positionTowerPanel(){
     if(this.panel.hidden)return;const s=this.scene,r=s.canvas.getBoundingClientRect();this.projected.set(s.selected.x,2.7,s.selected.z).project(s.camera);

@@ -4,6 +4,9 @@ import { SaveStore } from '../src/storage/SaveStore.js';
 import { WaveManager } from '../src/gameplay/WaveManager.js';
 import { MAPS } from '../src/data/headquarters.js';
 import { MODES } from '../src/data/headquarters.js';
+import { MODE_CAMPAIGNS } from '../src/data/modeCampaigns.js';
+import { campaignEnemy } from '../src/data/enemies.js';
+import { selectTarget } from '../src/gameplay/Targeting.js';
 import { VARIANTS,GOLDEN_FORMS,baseTower,requiredTowerLevel } from '../src/data/progression.js';
 import { createTower,updateTower,towerStats,upgradeCost } from '../src/gameplay/Tower.js';
 import { createEnemy } from '../src/gameplay/Enemy.js';
@@ -68,8 +71,53 @@ await test('Hardcore victory persists the Voidcore unlock',()=>{
  assert(new SaveStore(storage).data.clearedModes.includes('hardcore'));
 });
 await test('Campaign wave counts and triumph rewards match mode data; restart clears entities',()=>{
- const counts={easy:20,casual:25,intermediate:30,molten:35,fallen:40};for(const [id,waves] of Object.entries(counts))assert(MODES.find(m=>m.id===id).waves===waves);
+ const counts={easy:20,casual:25,intermediate:30,molten:35,fallen:40,hardcore:45,voidcore:50};for(const [id,waves] of Object.entries(counts)){assert(MODES.find(m=>m.id===id).waves===waves);assert(MODE_CAMPAIGNS[id].waves.length===waves);}
  for(const mode of ['easy','casual','intermediate','molten','fallen','hardcore','voidcore']){const mission={path:MAPS[0].path,map:MAPS[0].id,mode,loadout:['longwatch']},b=new WaveManager(mission),m=MODES.find(x=>x.id===mode);assert(b.totalWaves===m.waves);b.cash=1000;assert(b.place(-13,0,'longwatch').ok);b.state='WON';const s=new SaveStore({getItem:()=>null,setItem:()=>{}}),reward=s.complete(b,mission),day=new Date().getUTCDay(),boost=day===0||day>=5?2:1;assert(reward===(m.rewards.coins||0)&&s.data.xp===m.rewards.xp*boost&&s.data.shards===(m.rewards.shards||0));b.restart();assert(!b.allies.length&&!b.towers.length&&!b.enemies.length);}
+});
+await test('Supplied wave groups spawn their named enemies and base health',()=>{
+ const cases=[['easy','Normal',4,'Brute'],['casual','Normal',5,'Grave Digger'],['intermediate','Normal',5,'Patient Zero'],['molten','Abnormal',6,'Molten Warlord'],['fallen','Abnormal',8,'Fallen King'],['hardcore','Odd',13,'Void Reaver'],['voidcore','Odd',17,'Void Reaver']];
+ for(const [mode,name,health,final] of cases){
+  const b=new WaveManager({path:MAPS[0].path,mode,loadout:['prism-sentry']});
+  assert(b.remaining===MODE_CAMPAIGNS[mode].waves[0].reduce((n,[,count])=>n+count,0),mode+' prep contacts');
+  b.start();b.update(1/60);
+  assert(b.count===MODE_CAMPAIGNS[mode].waves[0].reduce((n,[,count])=>n+count,0),mode+' first-wave count');
+  assert(b.enemies[0].name===name&&b.enemies[0].maxHealth===health,mode+' first enemy');
+  assert(MODE_CAMPAIGNS[mode].waves.at(-1).some(([enemy])=>enemy===final),mode+' final boss');
+ }
+});
+await test('A campaign enemy keeps its listed HP across waves and reinforcements',()=>{
+ const mission={path:MAPS[0].path,mode:'easy',loadout:['prism-sentry']},b=new WaveManager(mission);
+ for(const wave of [1,8,12,20]){
+  b.wave=wave;b.state='PREP';b.start();b.update(1/60);
+  const name=b.spawnPlan[0],listed=campaignEnemy('easy',name).health;
+  assert(b.enemies[0].maxHealth===listed,`${name} changed HP on wave ${wave}`);
+  const extra=b.spawnCampaignEnemy(name,b.enemies[0]);
+  assert(extra.maxHealth===listed,`${name} reinforcement changed HP`);
+  b.enemies.length=0;
+ }
+});
+await test('Every supplied wave entry has a defined enemy and positive fixed HP',()=>{
+ for(const [mode,campaign] of Object.entries(MODE_CAMPAIGNS)){
+  for(const [index,groups] of campaign.waves.entries())for(const [name,count] of groups){
+   const enemy=campaignEnemy(mode,name);
+   assert(enemy&&Number.isFinite(enemy.health)&&enemy.health>0&&Number.isInteger(count)&&count>0,`${mode} wave ${index+1}: ${name}`);
+  }
+ }
+});
+await test('Named enemy types receive distinct procedural visual signatures',()=>{
+ const names=new Set(Object.values(MODE_CAMPAIGNS).flatMap(c=>Object.keys(c.enemies)));
+ const signatures=new Set([...names].map(name=>[...name].reduce((n,char)=>(n*31+char.charCodeAt(0))>>>0,7)));
+ assert(signatures.size===names.size,`${names.size-signatures.size} visual signatures collide`);
+});
+await test('Detection, lead protection, splits, and summoning use campaign traits',()=>{
+ const mission={path:MAPS[0].path,mode:'easy',loadout:['prism-sentry','longwatch','blast-courier']},b=new WaveManager(mission);
+ const hidden=createEnemy(1,mission.path,{...campaignEnemy('easy','Hidden'),speed:3});hidden.x=hidden.z=0;
+ const scout=createTower(1,0,0,TOWERS['prism-sentry']),sniper=createTower(2,0,0,TOWERS.longwatch);
+ assert(selectTarget(scout,[hidden],10)===null);assert(selectTarget(sniper,[hidden],10)===hidden);
+ const lead=createEnemy(2,mission.path,{...campaignEnemy('hardcore','Lead'),speed:3});lead.x=lead.z=0;
+ assert(selectTarget(scout,[lead],10)===null);assert(selectTarget(createTower(3,0,0,TOWERS['blast-courier']),[lead],10)===lead);
+ const breaker=b.spawnCampaignEnemy('Breaker2');b.resolve(breaker,false);assert(b.enemies.some(e=>e.name==='Breaker'));
+ const necro=b.spawnCampaignEnemy('Necromancer');b.start();necro.abilityTimer=0;b.update(1/60);assert(b.enemies.some(e=>e.name==='Skeleton'));
 });
 await test('Partial campaign rewards scale with waves survived',()=>{
  const mission={mode:'hardcore',map:'copper-reach'},s=new SaveStore({getItem:()=>null,setItem:()=>{}});s.complete({state:'LOST',wave:40,killed:0,health:0,towers:[],elapsed:10},mission);assert(s.data.shards>0&&s.data.shards<400&&s.data.xp>10);
