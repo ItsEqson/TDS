@@ -19,6 +19,7 @@ export class LobbyScene {
   toggleView(){this.viewMode=this.viewMode==='strategy'?'first-person':'strategy';this.app.viewMode=this.viewMode;this.app.ui.setViewMode(this.viewMode);this.updateCamera();}
   updateCamera(){
     const {x,z,yaw,pitch}=this.pose;
+    if(this.overhead)this.overhead.visible=this.viewMode==='first-person';
     if(this.avatar){this.avatar.visible=this.viewMode==='strategy';this.avatar.position.x=x;this.avatar.position.z=z;this.avatar.rotation.y=yaw+Math.PI;this.avatar.userData.head.rotation.x=THREE.MathUtils.clamp((pitch-.72)*.7,-.32,.48);}
     if(this.viewMode==='strategy'){
       const horizontal=this.app.zoom*Math.cos(pitch);

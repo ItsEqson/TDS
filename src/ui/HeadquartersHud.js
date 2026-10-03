@@ -53,10 +53,10 @@ export class HeadquartersHud {
     let html='';
     if(this.panel==='tutorial'){
       const pages=[
-        ['Explore headquarters','Walk with WASD. Drag the world to look around. Approach a glowing station and press E, or use the station buttons. Open Inventory to see your three starting defenders.'],
+        ['Explore headquarters','Use WASD to move and right-drag to orbit or tilt the view. Scroll to zoom and press V to switch between overhead and first-person views. Approach a glowing station and press E, or use the station buttons.'],
         ['Prepare your mission','Choose mission at the bottom of headquarters. Pick a difficulty to enter the separate preparation hall. At its map table, choose a route; at the armory, adjust your three tower slots. Deploy when ready.'],
-        ['Command from above','Pan with WASD, zoom with the wheel, and right-drag to orbit and tilt. Select a tower from the bottom tray, then click clear ground beside the road. Green means valid; red means blocked. Press Space to launch each wave.'],
-        ['Upgrade and claim','Click a placed tower to see its upgrade next to it. A bright upgrade button means you can afford it. Hover an enemy to read its health. After the battle, return to headquarters and open Rewards to view daily tasks and spin tickets.']
+        ['Command the defense','Pan with WASD, zoom with the wheel, right-drag to orbit and tilt, or press V for first person. Select a tower from the bottom tray, then click clear ground beside the road. Green means valid; red means blocked. Press Space to launch each wave.'],
+        ['Upgrade and claim','Click a placed tower to open its compact upgrade panel. A bright upgrade button means you can afford it. Hover an enemy to read its health. After the battle, return to headquarters and open Rewards to view daily tasks and spin tickets.']
       ],page=pages[this.tutorialStep];
       html=`<div class="tutorial"><span class="eyebrow">FIELD GUIDE / ${this.tutorialStep+1} OF ${pages.length}</span><h3>${page[0]}</h3><p>${page[1]}</p><div class="tutorial-progress">${pages.map((_,i)=>`<span class="${i===this.tutorialStep?'active':''}"></span>`).join('')}</div><div class="panel-actions">${this.tutorialStep?button('tutorial-prev','← Back'):''}${this.tutorialStep<pages.length-1?button('tutorial-next','Next →'):button('close','Start exploring ✓')}</div></div>`;
     }else if(this.panel==='inventory'){

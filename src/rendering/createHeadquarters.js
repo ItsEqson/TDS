@@ -28,7 +28,8 @@ export function createHeadquarters(scene,prep,profile,map){
   for(let i=-22;i<=22;i+=4){box(.035,.02,44,steel,i,0,0);box(44,.02,.035,steel,0,0,i);}
   box(46,10,.8,dark,0,5,-23);box(46,10,.8,dark,0,5,23);box(.8,10,46,dark,-23,5,0);box(.8,10,46,dark,23,5,0);
   for(const x of [-21,21])for(const z of [-20,-10,0,10,20]){box(1,10,1,steel,x,5,z);box(.08,7,1.04,glow,x,4,z);}
-  for(const z of [-18,-6,6,18]){box(44,.45,.6,steel,0,9,z);box(28,.06,.25,white,0,8.7,z);}
+  const overhead=new THREE.Group();root.add(overhead);
+  for(const z of [-18,-6,6,18]){mesh(overhead,new THREE.BoxGeometry(44,.45,.6),steel,0,9,z);mesh(overhead,new THREE.BoxGeometry(28,.06,.25),white,0,8.7,z);}
   for(const x of [-3,3])box(.08,.03,35,glow,x,.03,0);
   const zoneColors=[0x26dfdb,0x9970ff,0xffb637,0xff638f];
   for(let i=0;i<4;i++){
@@ -86,5 +87,5 @@ export function createHeadquarters(scene,prep,profile,map){
     sign(root,'CHOOSE MAP · EQUIP · DEPLOY',0,5,-10,'#d1edea',8);
     if(map.id==='frostline')for(let i=0;i<10;i++)mesh(root,new THREE.ConeGeometry(.2,.6,4),white,-5+i,7,-20);
   }
-  return {root,obstacles,rotors,hologram};
+  return {root,obstacles,rotors,hologram,overhead};
 }
