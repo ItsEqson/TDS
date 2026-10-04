@@ -1,5 +1,9 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
+## Active Work — Shared Strategy and First-Person Cameras (2026-10-03)
+
+Headquarters and staging now default to the same overhead orbit-and-zoom view as battle. The V key and visible view buttons switch all three spaces to first person and back. The selected view carries through scene changes in the current session. Headquarters ceiling beams hide in overhead mode so stations remain visible and reappear in first person. Battle HUD controls stay on compact screen-edge overlays. Browser verification covered both views in headquarters and battle, overhead staging, 17/17 headquarters checks, 7/7 lifecycle checks, and no live console errors.
+
 ## Active Work — Strategy Camera and Enemy Readability (2026-10-02)
 
 Battle now opens in a third-person overhead strategy view. WASD pans the field, the wheel zooms from close inspection to a wide view, and right-drag or touch-drag orbits and tilts at every zoom level. The commander follows the pan focus; walkers, flyers, and firing towers have visible motion. Campaign enemy names produce stable procedural colors, headgear, and equipment silhouettes, with additional shapes for key traits. Supplied base HP remains fixed per enemy type within each mode, including later waves and summoned copies. Tests cover every supplied wave entry and repeated HP, and browser checks cover camera movement, hover, resize, restart, and resource cleanup. Full campaign balance and individually authored boss attacks remain open.

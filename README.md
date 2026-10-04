@@ -1,6 +1,6 @@
-## Current play flow (2026-09-29)
+## Current play flow (2026-10-03)
 
-Start in a colorful 3D headquarters. Use **WASD** to walk, **right-drag** to look, and the **mouse wheel** to zoom out into a following third-person view. Touch movement pads appear only on coarse touch devices. Set a persistent 50°–100° field of view in Settings. Battles use an overhead strategy camera: WASD pans, the wheel zooms, and right-drag or touch-drag orbits and tilts the view.
+Start in a colorful 3D headquarters with the same overhead strategy camera used in battle. Use **WASD** to move, **right-drag** to orbit and tilt, the **mouse wheel** to zoom, and **V** to switch to or from first person. Touch movement pads appear only on coarse touch devices. Set a persistent 50°–100° field of view in Settings. Battles start in that overhead strategy view; **V** switches to a walkable first-person view.
 
 Survival offers Easy (20 waves), Casual (25), Intermediate (30), Molten (35), and Fallen (40). Hardcore has 45 waves and Voidcore has 50; both require account level 50, and Voidcore requires a Hardcore victory. Each public mode now uses its supplied natural-spawn groups, enemy roster, and base HP. The old five-wave Beginner campaign remains internally for save/test compatibility but is no longer a separate public mode. Pick a mode, choose a map in the walkable staging hall, edit the three-slot loadout, and deploy.
 
@@ -36,7 +36,7 @@ You arrive in a first-person headquarters. Walk with **WASD**, look with **arrow
 
 Choose **Missions → Survival or Hardcore** to enter the separate preparation hall. Its 3D map table, armory, and supplies frame the staging controls. Choose among Copper Reach, Frostline Depot, Ember Pass, and Verdant Loop, edit the three-slot loadout, then deploy. Selection remains immutable for that run. Empty loadouts cannot deploy.
 
-Battles use an overhead 3D strategy camera. Pan with **WASD**, zoom with the wheel, and right-drag to orbit and tilt; on touchscreens, hold the movement pad and drag the world to adjust the view. Select a tower in the bottom tray, then click/tap valid terrain. Road, arena bounds, tower overlap and cost are validated in simulation. Hover an enemy for its health; click a placed tower for its nearby upgrade panel. **Space** starts each wave, **Escape** cancels, and **R** restarts a terminal battle. Headquarters returns from any battle; abandoning an unfinished battle gives no mission reward.
+Battles use an overhead 3D strategy camera by default, with **V** switching to first person. Pan with **WASD**, zoom with the wheel, and right-drag to orbit and tilt; on touchscreens, hold the movement pad and drag the world to adjust the view. Select a tower in the bottom tray, then click/tap valid terrain. Road, arena bounds, tower overlap and cost are validated in simulation. Hover an enemy for its health; click a placed tower for its nearby upgrade panel. **Space** starts each wave, **Escape** cancels, and **R** restarts a terminal battle. Headquarters returns from any battle; abandoning an unfinished battle gives no mission reward.
 
 New profiles start with Scout, Sniper, and Demoman equipped. Two Scouts at different bends are a viable Beginner opening. Battle cash and account coins are separate.
 

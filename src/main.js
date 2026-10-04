@@ -10,7 +10,7 @@ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 const canvas=renderer.domElement;
 canvas.tabIndex=0;
-canvas.setAttribute('aria-label','Copper Reach 3D world. WASD to walk, right-drag or touch-drag to look, mouse wheel to zoom, E to interact. Battle: Space starts wave, R restarts.');
+canvas.setAttribute('aria-label','Copper Reach 3D world. WASD to move, right-drag or touch-drag to look, wheel to zoom, V to switch overhead and first person, E to interact. Battle: Space starts wave, R restarts.');
 host.append(canvas);
 const game=new Game(renderer,new SceneRouter(canvas),host);
 game.start();
