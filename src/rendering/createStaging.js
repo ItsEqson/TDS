@@ -5,29 +5,40 @@ import { MAPS } from '../data/headquarters.js';
 import { TOWERS } from '../data/towers.js';
 
 export const STAGING_STATIONS=Object.freeze([
-  {id:'briefing',name:'MAP TABLE',x:0,z:-12},
+  {id:'maps',name:'MAP TABLE',x:0,z:-12},
   {id:'inventory',name:'FIELD ARMORY',x:-12,z:0},
-  {id:'rewards',name:'SUPPLY DESK',x:12,z:0}
 ]);
 
 export function createStaging(scene,map){
-  scene.background=new THREE.Color(0x24405c);scene.fog=new THREE.Fog(0x24405c,38,90);
+  scene.background=new THREE.Color(0x8ed0e1);scene.fog=new THREE.Fog(0x8ed0e1,75,170);
   scene.add(new THREE.HemisphereLight(0xd8f6ff,0x3d465b,2.5));
   const light=new THREE.DirectionalLight(0xffd5a1,2.5);light.position.set(-8,18,10);scene.add(light);
   const root=new THREE.Group();scene.add(root);
   const floor=material(0x4d7388),wall=material(0x23435c),trim=material(0x78a9b7),gold=material(0xffca73),cyan=new THREE.MeshBasicMaterial({color:0x65e5d5});
   const box=(w,h,d,mat,x,y,z)=>mesh(root,new THREE.BoxGeometry(w,h,d),mat,x,y,z);
+  const sea=new THREE.MeshStandardMaterial({color:0x278fa9,roughness:.24,metalness:.22});
+  mesh(root,new THREE.PlaneGeometry(320,320),sea,0,-2.2,0).rotation.x=-Math.PI/2;
+  const sand=material(0xd6c596),grass=material(0x72a97b),foam=new THREE.MeshBasicMaterial({color:0xbde7dc});
+  mesh(root,new THREE.CylinderGeometry(34,38,2,48),sand,0,-1.3,0);
+  mesh(root,new THREE.CylinderGeometry(30,33,.35,48),grass,0,-.18,0);
+  mesh(root,new THREE.TorusGeometry(34.2,.24,6,64),foam,0,-1.95,0).rotation.x=Math.PI/2;
   box(46,.4,46,floor,0,-.25,0);
   for(const [x,z,color] of [[0,-12,0x397e86],[-12,0,0x937456],[12,0,0x966b80],[0,13,0x637e61]]){
     const tile=material(color);mesh(root,new THREE.CylinderGeometry(7,7,.05,12),tile,x,0,z);
     mesh(root,new THREE.TorusGeometry(6.8,.08,6,48),gold,x,.05,z).rotation.x=Math.PI/2;
   }
   for(let n=-20;n<=20;n+=5){box(.07,.03,43,trim,n,.01,0);box(43,.03,.07,trim,0,.01,n);}
-  for(const x of [-23,23]){box(.7,10,46,wall,x,5,0);for(const z of [-18,-6,6,18]){box(.9,9,1,trim,x,4.5,z);box(.12,5,.7,cyan,x,4,z);}}
-  for(const z of [-23,23])box(46,10,.7,wall,0,5,z);
-  for(const x of [-17,17])for(const z of [-17,17]){box(1.2,8,1.2,trim,x,4,z);box(1.25,.18,1.25,gold,x,7.8,z);}
+  // Low railings preserve the open island view from both camera modes.
+  for(const x of [-22.8,22.8]){box(.35,.8,46,trim,x,.45,0);for(let z=-21;z<=21;z+=6)box(.45,1.5,.45,gold,x,.75,z);}
+  for(const z of [-22.8,22.8]){box(46,.8,.35,trim,0,.45,z);for(let x=-21;x<=21;x+=6)box(.45,1.5,.45,gold,x,.75,z);}
+  const rock=material(0x8c9182),leaf=material(0x388773),trunk=material(0x886e54);
+  for(const [x,z,scale] of [[-29,-22,1],[29,-18,.9],[-29,19,.8],[28,25,1.1]]){
+    mesh(root,new THREE.DodecahedronGeometry(2.1*scale,0),rock,x,-.2,z);
+    mesh(root,new THREE.CylinderGeometry(.27,.45,4*scale,7),trunk,x,1.6*scale,z);
+    for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]])mesh(root,new THREE.ConeGeometry(1.25*scale,3*scale,6),leaf,x+dx*.8*scale,4.3*scale,z+dz*.8*scale);
+  }
   for(let n=-18;n<20;n+=6){box(2,.035,.12,gold,0,.02,n);box(.12,.035,2,gold,n,.02,-2);}
-  sign(root,'EXPEDITION HALL',0,7.5,-21,'#ffe2a2',12);
+  sign(root,'ISLAND DEPLOYMENT',0,5.5,-21,'#ffe2a2',10);
   const obstacles=[],rotors=[];
   // A physical map table, armory and supplies make preparation spatial.
   mesh(root,new THREE.CylinderGeometry(4.2,4.6,1.7,12),wall,0,.85,-12);mesh(root,new THREE.CylinderGeometry(4.35,4.35,.18,12),trim,0,1.78,-12);

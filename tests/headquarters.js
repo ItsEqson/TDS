@@ -39,6 +39,13 @@ test('Wheel prize data matches the coins granted for each segment',()=>{
  try{for(let i=0;i<4;i++){Math.random=()=> (i+.1)/4;const s=new SaveStore(memory()),before=s.data.coins,result=s.spin();assert(result.index===i&&result.coins===prizes[i]&&s.data.coins===before+prizes[i]&&s.data.tickets===0);}}
  finally{Math.random=original;}
 });
+test('Daily deal and field bundle grant only their stated contents',()=>{
+ const s=new SaveStore(memory());s.data.coins=1000;
+ assert(s.buyOffer('daily').includes('2 cosmetic crates'));assert(s.data.coins===850&&s.data.crates===2);
+ assert(s.buyOffer('daily')==='Offer unavailable.'&&s.data.crates===2);
+ assert(s.buyOffer('field').includes('spin ticket'));assert(s.data.coins===570&&s.data.crates===5&&s.data.tickets===2);
+ const reloaded=new SaveStore(s.storage);assert(reloaded.data.dailyDealDay===s.data.dailyDealDay&&reloaded.data.crates===5);
+});
 const html=new DOMParser().parseFromString(await(await fetch('/')).text(),'text/html');
 document.querySelector('#fixture').append(html.querySelector('#game'),html.querySelector('#hq-dialog'));document.querySelector('#loading').remove();
 const canvas=document.createElement('canvas');canvas.tabIndex=0;document.querySelector('#viewport').append(canvas);
@@ -57,6 +64,14 @@ test('Look sensitivity persists and inventory opens grouped by category',()=>{
  const headings=[...document.querySelectorAll('.roster-heading')].map(x=>x.textContent);
  assert(headings.join('|')==='Starter|Intermediate|Advanced|Hardcore & Evolved|Exclusive / Event',headings.join('|'));
  app.ui.close();
+});
+test('Shop offers, crate counter, and preparation controls stay in their own panels',()=>{
+ app.ui.open('shop');assert(!document.querySelector('#roster-filter')&&document.querySelectorAll('#panel-content [data-hq="offer"]').length===2);app.ui.close();
+ app.ui.open('crates');assert(document.querySelectorAll('#panel-content [data-hq="buy"]').length===2);app.ui.close();
+ app.prepare();assert(app.kind==='prep'&&getComputedStyle(document.querySelector('.hq-nav')).display==='none');
+ app.ui.open('maps');assert(document.querySelectorAll('#panel-content [data-hq="map"]').length===MAPS.length&&!document.querySelector('#panel-content [data-hq="slot"]'));app.ui.close();
+ app.ui.open('inventory');assert(document.querySelectorAll('.inventory-cards [data-hq="tower"]').length===3);app.ui.close();
+ app.ui.open('shop');assert(!app.ui.isOpen);app.go('hq');
 });
 test('Desktop look starts on right button and movement pad follows touch capability',()=>{
  const s=app.active,capture=canvas.setPointerCapture;canvas.setPointerCapture=()=>{};const pointer=(button,x)=>({button,pointerType:'mouse',pointerId:9,target:canvas,clientX:x,clientY:100,preventDefault:()=>{}});s.input.down(pointer(0,100));assert(!s.input.look);s.input.down(pointer(2,100));assert(s.input.look?.id===9);const yaw=s.pose.yaw;s.input.move(pointer(2,140));assert(Math.abs((s.pose.yaw-yaw)+40*.004*app.lookSensitivity)<1e-8);s.input.release({pointerId:9});canvas.setPointerCapture=capture;const coarse=matchMedia('(hover:none) and (pointer:coarse)').matches;assert((getComputedStyle(document.querySelector('#walk-pad')).display==='grid')===coarse);

@@ -27,7 +27,7 @@ export class LobbyScene {
       this.camera.lookAt(x,0,z);
     }else{this.camera.position.set(x,WALK.eyeHeight,z);this.camera.rotation.set(this.firstPitch,yaw,0);}
   }
-  interact(){if(this.app.ui.isOpen)return;if(this.prep)this.app.ui.open('briefing');else if(this.near)this.app.ui.open(this.near.id);}
+  interact(){if(this.app.ui.isOpen)return;if(this.near)this.app.ui.open(this.near.id);}
   setMap(map){if(this.prep&&this.mapPlate)this.mapPlate.material.color.setHex(map.color);}
   update(dt){
     this.time+=dt;
@@ -43,7 +43,7 @@ export class LobbyScene {
     }
     this.updateCamera();
     const p=this.pose;this.near=(this.prep?STAGING_STATIONS:STATIONS).find(s=>Math.hypot(s.x-p.x,s.z-p.z)<7);
-    this.app.ui.setPrompt(this.prep?'Staging · choose map and loadout':this.near?'E · '+this.near.name:'WASD move · drag look · wheel zoom');
+    this.app.ui.setPrompt(this.near?'E · '+this.near.name:this.prep?'Island staging · choose map and loadout':'WASD move · drag look · wheel zoom');
     if(!this.app.reducedMotion)for(const r of this.rotors){if(r.type==='tower')r.object.rotation.y+=dt*.4;if(r.type==='ring')r.object.rotation.z+=dt*.25;if(r.type==='screen')r.object.scale.y=.7+Math.sin(this.time+r.phase)*.3;if(r.type==='carrier')r.object.position.set(Math.sin(this.time*.14)*17,7.5,6);}
   }
   render(renderer){renderer.render(this.scene,this.camera);}

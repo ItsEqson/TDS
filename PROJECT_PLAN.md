@@ -1,5 +1,9 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
+## Active Work — Lobby and Island Staging Flow (2026-10-03)
+
+Headquarters now has an open sky and visible surroundings, with an unboxed Start control. Preparation takes place on an outdoor island surrounded by water. Its side navigation is hidden; the map table and Select map control open map selection only, while the armory and Equip towers control open an owned-tower inventory with no purchase actions. The shop now carries a once-daily crate deal and a crate-and-ticket bundle, and the Crates destination lists only purchasable crates and openings. Browser checks passed: 19/19 headquarters, 12/12 logic, 18/18 roster, and 7/7 lifecycle; live browser inspection covered the lobby, island, shop purchase, crate counter, map choice, and equip-only tower detail with no console errors.
+
 ## Active Work — Shared Strategy and First-Person Cameras (2026-10-03)
 
 Headquarters and staging now default to the same overhead orbit-and-zoom view as battle. The V key and visible view buttons switch all three spaces to first person and back. The selected view carries through scene changes in the current session. Headquarters ceiling beams hide in overhead mode so stations remain visible and reappear in first person. Battle HUD controls stay on compact screen-edge overlays. Browser verification covered both views in headquarters and battle, overhead staging, 17/17 headquarters checks, 7/7 lifecycle checks, and no live console errors.

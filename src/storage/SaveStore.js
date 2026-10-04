@@ -5,7 +5,7 @@ import { MODES } from '../data/headquarters.js';
 import { accountLevel,requiredTowerLevel,VARIANTS,GOLDEN_FORMS,baseTower } from '../data/progression.js';
 const KEY='copper-reach-profile-v1';
 const STARTERS=['prism-sentry','longwatch','blast-courier'];
-const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:[...STARTERS],loadout:[...STARTERS],forms:{},fov:68,lookSensitivity:1,skins:['standard'],skin:'standard',crates:0,goldenCrates:0,tickets:1,claims:[],loginDay:'',loginCount:0,tutorialSeen:false,codes:[],records:{},clearedModes:[],secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
+const initial=()=>({version:1,shards:0,coins:ECONOMY.startCoins,xp:0,wins:0,kills:0,played:0,missions:0,owned:[...STARTERS],loadout:[...STARTERS],forms:{},fov:68,lookSensitivity:1,skins:['standard'],skin:'standard',crates:0,goldenCrates:0,tickets:1,dailyDealDay:'',claims:[],loginDay:'',loginCount:0,tutorialSeen:false,codes:[],records:{},clearedModes:[],secret:false,daily:{period:'',missions:0,claimed:false},weekly:{period:'',kills:0,claimed:false},mastery:{},flawless:0});
 // Profile mutations and persistence have one owner. Invalid saves recover field by field.
 export class SaveStore {
   constructor(storage){
@@ -33,6 +33,7 @@ export class SaveStore {
     for(const id of Array.isArray(raw.loadout)?raw.loadout:[])if(VARIANTS[id]&&p.owned.includes(id)&&!p.forms[VARIANTS[id]])p.forms[VARIANTS[id]]=id;
     p.tutorialSeen=raw.tutorialSeen===true;
     if(typeof raw.loginDay==='string')p.loginDay=raw.loginDay;
+    if(typeof raw.dailyDealDay==='string')p.dailyDealDay=raw.dailyDealDay;
     p.secret=raw.secret===true;
     for(const [kind,key] of [['daily','missions'],['weekly','kills']]){const r=raw[kind];if(r&&typeof r.period==='string'&&Number.isFinite(r[key])&&r[key]>=0)p[kind]={period:r.period,[key]:r[key],claimed:r.claimed===true};}
     for(const id of p.owned)if(Number.isFinite(raw.mastery?.[id])&&raw.mastery[id]>=0)p.mastery[id]=raw.mastery[id];
@@ -62,6 +63,15 @@ export class SaveStore {
     if(tower&&this.level<(requiredTowerLevel[kind]||1))return `Reach level ${requiredTowerLevel[kind]} first.`;
     if(tower&&VARIANTS[kind]&&!p.owned.includes(VARIANTS[kind]))return 'Recruit the base tower first.';
     p[currency]-=price;if(tower)p.owned.push(kind);else if(kind==='crate')p.crates++;else p.skins.push(kind);return 'Added to your collection.';
+  });}
+  buyOffer(kind){return this.change(p=>{
+    const day=new Date().toISOString().slice(0,10);
+    const offers={daily:{price:150,crates:2,tickets:0},field:{price:280,crates:3,tickets:1}};
+    const offer=offers[kind];
+    if(!offer||p.coins<offer.price||kind==='daily'&&p.dailyDealDay===day)return 'Offer unavailable.';
+    p.coins-=offer.price;p.crates+=offer.crates;p.tickets+=offer.tickets;
+    if(kind==='daily')p.dailyDealDay=day;
+    return `${offer.crates} cosmetic crates${offer.tickets?' and 1 spin ticket':''} added.`;
   });}
   openGoldenCrate(){return this.change(p=>{if(!p.goldenCrates)return null;p.goldenCrates--;const remaining=GOLDEN_FORMS.filter(id=>!p.owned.includes(id));if(!remaining.length){p.coins+=50000;return {duplicate:true};}const id=remaining[Math.floor(Math.random()*remaining.length)];p.owned.push(id);return {id,base:VARIANTS[id],duplicate:false};});}
   claim(id){return this.change(p=>{

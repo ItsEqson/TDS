@@ -10,7 +10,7 @@ export function sign(parent,text,x,y,z,color='#c5eee8',width=5){
   return mesh(parent,new THREE.PlaneGeometry(width,width/8),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}),x,y,z);
 }
 export function createHeadquarters(scene,prep,profile,map){
-  scene.background=new THREE.Color(0x394b70);scene.fog=new THREE.Fog(0x394b70,48,100);
+  scene.background=new THREE.Color(0x8ac9e5);scene.fog=new THREE.Fog(0x8ac9e5,75,160);
   scene.add(new THREE.HemisphereLight(0xc4e5ff,0x3a414f,2.3));
   const sun=new THREE.DirectionalLight(0xffe1b0,2.6);sun.position.set(4,18,8);scene.add(sun);
   const root=new THREE.Group();scene.add(root);
@@ -26,8 +26,15 @@ export function createHeadquarters(scene,prep,profile,map){
     for(const offset of [-8,0,8]){box(.07,.04,6,rim,x+offset,.03,z);box(6,.04,.07,rim,x,.03,z+offset);}
   }
   for(let i=-22;i<=22;i+=4){box(.035,.02,44,steel,i,0,0);box(44,.02,.035,steel,0,0,i);}
-  box(46,10,.8,dark,0,5,-23);box(46,10,.8,dark,0,5,23);box(.8,10,46,dark,-23,5,0);box(.8,10,46,dark,23,5,0);
-  for(const x of [-21,21])for(const z of [-20,-10,0,10,20]){box(1,10,1,steel,x,5,z);box(.08,7,1.04,glow,x,4,z);}
+  // The command deck is an open-air base with a low perimeter and visible sky.
+  box(46,2.8,.8,dark,0,1.4,-23);box(46,2.8,.8,dark,0,1.4,23);box(.8,2.8,46,dark,-23,1.4,0);box(.8,2.8,46,dark,23,1.4,0);
+  for(const x of [-21,21])for(const z of [-20,-10,0,10,20]){box(1,6,1,steel,x,3,z);box(.08,4,1.04,glow,x,3,z);}
+  const outerGround=material(0x619b78),outerRock=material(0x849693),outerLeaf=material(0x3f876d);
+  mesh(root,new THREE.PlaneGeometry(220,220),outerGround,0,-1.1,0).rotation.x=-Math.PI/2;
+  for(let i=0;i<20;i++){
+    const angle=i*Math.PI*2/20,dist=38+(i%3)*7,x=Math.cos(angle)*dist,z=Math.sin(angle)*dist;
+    mesh(root,new THREE.ConeGeometry(7+(i%3)*2,12+(i%4)*3,7),i%4?outerLeaf:outerRock,x,4,z);
+  }
   const overhead=new THREE.Group();root.add(overhead);
   for(const z of [-18,-6,6,18]){mesh(overhead,new THREE.BoxGeometry(44,.45,.6),steel,0,9,z);mesh(overhead,new THREE.BoxGeometry(28,.06,.25),white,0,8.7,z);}
   for(const x of [-3,3])box(.08,.03,35,glow,x,.03,0);

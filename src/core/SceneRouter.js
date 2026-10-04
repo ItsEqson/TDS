@@ -21,7 +21,7 @@ export class SceneRouter {
   get mode(){return this.selection.mode&&this.modes.find(m=>m.id===this.selection.mode);}
   get modes(){return MODES;}
   canPlay(m){return m.available&&(this.store.level>= (m.requiredLevel||1))&&(m.id!=='voidcore'||this.store.data.clearedModes.includes('hardcore'));}
-  selectMap(id){if(!MAPS.some(m=>m.id===id)||this.deploying)return;this.selection.map=id;if(this.kind==='prep'){this.active.setMap(this.map);this.ui.open('briefing');}}
+  selectMap(id){if(!MAPS.some(m=>m.id===id)||this.deploying)return;this.selection.map=id;if(this.kind==='prep'){this.active.setMap(this.map);this.ui.open('maps');}}
   deploy(){
     if(this.deploying||this.kind!=='prep')return;
     if(!this.canPlay(this.mode)){this.ui.notify('Mode requirements are not met.');return;}
