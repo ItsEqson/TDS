@@ -56,7 +56,7 @@ try{
       assert(scene.battle.state==='WON','Defended outcome');
       scene.restart();
       scene.render(renderer,1);
-      assert(scene.battle.cash===200&&scene.battle.health===10&&scene.battle.remaining===10&&scene.battle.state==='PREP','HUD reset');
+      assert(scene.battle.cash===200&&scene.battle.health===100&&scene.battle.remaining===10&&scene.battle.state==='PREP','HUD reset');
       assert(scene.enemyMeshes.size===0&&scene.towerMeshes.size===0,'Entity mesh cleanup');
       assert(renderer.info.memory.geometries===baselineGeometry,'GPU geometry leak: '+renderer.info.memory.geometries+' vs '+baselineGeometry);
       assert(scene.scene.children.length===baselineChildren,'Scene object leak');
@@ -96,7 +96,8 @@ try{
     assert(!scene.placing&&cancel.defaultPrevented&&scene.battle.cash===200,'Escape cancellation');
     const context=new MouseEvent('contextmenu',{cancelable:true});canvas.dispatchEvent(context);
     assert(context.defaultPrevented,'Focused right-look opened browser menu');
-    scene.place();canvas.dispatchEvent(new PointerEvent('pointerdown',{button:2,cancelable:true}));
+    const capture=canvas.setPointerCapture;canvas.setPointerCapture=()=>{};
+    scene.place();canvas.dispatchEvent(new PointerEvent('pointerdown',{button:2,cancelable:true}));canvas.setPointerCapture=capture;
     const activeContext=new MouseEvent('contextmenu',{cancelable:true});canvas.dispatchEvent(activeContext);
     assert(scene.placing&&activeContext.defaultPrevented,'Right-drag look availability');scene.cancel();
     const start=key('Space');canvas.dispatchEvent(start);

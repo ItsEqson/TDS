@@ -28,7 +28,7 @@ function finish(b,dt=1/60){
 }
 test('Fresh battle and guarded start/restart',()=>{
   const b=new WaveManager();
-  assert(b.cash===200&&b.health===10&&b.remaining===10&&b.state==='PREP');
+  assert(b.cash===200&&b.health===100&&b.remaining===10&&b.state==='PREP');
   assert(!b.restart());
   assert(b.start());
   assert(!b.start());
@@ -97,6 +97,19 @@ test('Wave spawns exactly ten at the configured fixed interval',()=>{
   }
   assert(b.spawned===10);
 });
+test('Skipping launches the next wave while spawned enemies remain',()=>{
+  const mission={mode:'beginner',path:WAYPOINTS,loadout:['prism-sentry']},b=new WaveManager(mission);
+  assert(!b.skipWave());b.start();b.update(1/60);
+  const old=b.enemies[0],id=old.id;
+  assert(b.skipWave()&&b.wave===2&&b.state==='WAVE_ACTIVE'&&b.enemies.includes(old)&&b.wavesStarted===2);
+  b.update(1/60);
+  assert(b.enemies.some(e=>e.id===id)&&b.enemies.some(e=>e.id!==id));
+});
+test('Breach removes remaining enemy health from the 100 HP base',()=>{
+  const b=new WaveManager(),enemy=createEnemy(1);enemy.health=7.4;
+  b.resolve(enemy,true);assert(b.health===92&&b.arrived===1);
+  b.resolve(enemy,true);assert(b.health===92&&b.arrived===1);
+});
 test('One inner-bend sentry damages, visibly signals shots, kills all ten and wins',()=>{
   const b=new WaveManager();
   assert(b.place(-13,0).ok);
@@ -108,7 +121,7 @@ test('One inner-bend sentry damages, visibly signals shots, kills all ten and wi
     shot ||= b.towers[0].beamRemaining>0;
   }
   assert(hurt&&shot);
-  assert(b.state==='WON'&&b.killed===10&&b.arrived===0&&b.health===10&&b.remaining===0&&b.spawned===10);
+  assert(b.state==='WON'&&b.killed===10&&b.arrived===0&&b.health===100&&b.remaining===0&&b.spawned===10);
 });
 test('Undefended run loses with exactly ten base hits, no double resolution',()=>{
   const b=new WaveManager();
@@ -139,7 +152,7 @@ test('Three consecutive restart cycles restore every battle resource',()=>{
     b.start();
     finish(b);
     assert(b.restart());
-    assert(b.state==='PREP'&&b.cash===200&&b.health===10&&b.remaining===10&&b.spawned===0&&b.killed===0&&b.arrived===0&&b.towers.length===0&&b.enemies.length===0&&b.elapsed===0);
+    assert(b.state==='PREP'&&b.cash===200&&b.health===100&&b.remaining===10&&b.spawned===0&&b.killed===0&&b.arrived===0&&b.towers.length===0&&b.enemies.length===0&&b.elapsed===0);
   }
 });
 test('Game suspension resets accumulated time and frame timestamp',()=>{

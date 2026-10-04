@@ -1,5 +1,11 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
+## Active Work — Wave Skip, Quest Tracking, and Mission Results (2026-10-03)
+
+The latest request adds a skip control during active waves. It stops only the remaining spawns from that wave and immediately launches the next while already spawned enemies continue along the path. Tower beams and recoil reset at wave end. The base starts at 100 HP and loses the breaching enemy's remaining HP. Three daily quests and one selected quest track battles with saved rewards; their battle overlay can be disabled in Settings. The shop displays original crate images, six explicit cosmetic odds, and four daily tower skin offers priced at 120 coins each. Currency icons and reward popups accompany account currency awards. Mission victory/defeat results show progress, elapsed time, and rewards, with loading screens for staging and the return to the 3D lobby.
+
+Browser checks: 14/14 logic, 20/20 headquarters, 7/7 lifecycle, and 18/18 roster. Live inspection covered the staging loading screen, quest board, skin shop and crate odds, active wave skip, and battle quest overlay. The browser console had no errors on the final fresh lifecycle run. Full 20–50 wave balance and native Firefox/Edge remain open.
+
 ## Active Work — Lobby and Island Staging Flow (2026-10-03)
 
 Headquarters now has an open sky and visible surroundings, with an unboxed Start control. Preparation takes place on an outdoor island surrounded by water. Its side navigation is hidden; the map table and Select map control open map selection only, while the armory and Equip towers control open an owned-tower inventory with no purchase actions. The shop now carries a once-daily crate deal and a crate-and-ticket bundle, and the Crates destination lists only purchasable crates and openings. Browser checks passed: 19/19 headquarters, 12/12 logic, 18/18 roster, and 7/7 lifecycle; live browser inspection covered the lobby, island, shop purchase, crate counter, map choice, and equip-only tower detail with no console errors.

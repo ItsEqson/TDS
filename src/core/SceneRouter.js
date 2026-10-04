@@ -17,7 +17,13 @@ export class SceneRouter {
     this.active=kind==='battle'?new BattleScene(this.canvas,this,this.mission):new LobbyScene(this.canvas,this,kind==='prep',this.pose);
     this.ui.show(kind);this.active.init();this.active.enter();this.active.resize(this.width,this.height);this.canvas.focus({preventScroll:true});
   }
-  prepare(){const m=this.mode;if(!m||!this.canPlay(m)){this.ui.notify('This mode is locked. Check its level and victory requirements.');return;}this.go('prep');}
+  prepare(){const m=this.mode;if(!m||!this.canPlay(m)){this.ui.notify('This mode is locked. Check its level and victory requirements.');return;}if(this.preparing)return;this.ui.close();this.preparing=this.reducedMotion?.05:1.2;document.querySelector('#prep-overlay').hidden=false;}
+  returnToHeadquarters(){
+    if(this.returning)return;
+    this.returning=this.reducedMotion?.05:1.2;
+    const overlay=document.querySelector('#return-overlay');overlay.hidden=false;
+    this.audio.play('deploy');
+  }
   get mode(){return this.selection.mode&&this.modes.find(m=>m.id===this.selection.mode);}
   get modes(){return MODES;}
   canPlay(m){return m.available&&(this.store.level>= (m.requiredLevel||1))&&(m.id!=='voidcore'||this.store.data.clearedModes.includes('hardcore'));}
@@ -26,12 +32,14 @@ export class SceneRouter {
     if(this.deploying||this.kind!=='prep')return;
     if(!this.canPlay(this.mode)){this.ui.notify('Mode requirements are not met.');return;}
     if(!this.store.data.loadout.some(Boolean)){this.ui.notify('Equip at least one tower before deployment.');return;}
-    this.mission=Object.freeze({...this.selection,path:this.map.path,loadout:Object.freeze([...this.store.data.loadout]),forms:Object.freeze({...this.store.data.forms}),skin:this.store.data.skin,mapData:this.map});
+    this.mission=Object.freeze({...this.selection,path:this.map.path,loadout:Object.freeze([...this.store.data.loadout]),forms:Object.freeze({...this.store.data.forms}),skin:this.store.data.skin,towerSkins:Object.freeze({...this.store.data.towerSkins}),mapData:this.map});
     this.ui.close();this.deploying=this.reducedMotion?.05:OPERATION.deploySeconds;this.ui.setDeploying(true);
     this.audio.play('deploy');
   }
   update(dt){
     this.store.tick(dt);
+    if(this.preparing){this.preparing-=dt;if(this.preparing<=0){this.preparing=0;document.querySelector('#prep-overlay').hidden=true;this.go('prep');}}
+    if(this.returning){this.returning-=dt;if(this.returning<=0){this.returning=0;document.querySelector('#return-overlay').hidden=true;this.go('hq');}}
     if(this.deploying){this.deploying-=dt;if(this.deploying<=0){this.deploying=0;this.ui.setDeploying(false);this.go('battle');}}
     this.active.update(dt);this.ui.update(dt);
   }

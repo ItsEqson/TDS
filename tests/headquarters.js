@@ -46,6 +46,15 @@ test('Daily deal and field bundle grant only their stated contents',()=>{
  assert(s.buyOffer('field').includes('spin ticket'));assert(s.data.coins===570&&s.data.crates===5&&s.data.tickets===2);
  const reloaded=new SaveStore(s.storage);assert(reloaded.data.dailyDealDay===s.data.dailyDealDay&&reloaded.data.crates===5);
 });
+test('Three daily quests, selected quest, and daily skin offers persist and pay once',()=>{
+ const s=new SaveStore(memory());s.data.daily.missions=1;s.data.daily.kills=25;s.data.daily.waves=3;
+ assert(s.claimDailyBonus()===100&&s.claimDailyBonus()===0);
+ assert(s.selectQuest('kills'));s.data.selectedProgress=100;
+ assert(s.claimSelectedQuest()===150&&s.claimSelectedQuest()===0);
+ s.data.coins=500;assert(s.buyDailySkin('copper')&&s.data.coins===380&&!s.buyDailySkin('copper'));
+ s.setShowQuests(false);const reload=new SaveStore(s.storage);
+ assert(!reload.data.showQuests&&reload.data.towerSkins['prism-sentry']==='copper'&&reload.data.dailyBonusClaimed&&reload.data.selectedClaimed);
+});
 const html=new DOMParser().parseFromString(await(await fetch('/')).text(),'text/html');
 document.querySelector('#fixture').append(html.querySelector('#game'),html.querySelector('#hq-dialog'));document.querySelector('#loading').remove();
 const canvas=document.createElement('canvas');canvas.tabIndex=0;document.querySelector('#viewport').append(canvas);
@@ -68,7 +77,7 @@ test('Look sensitivity persists and inventory opens grouped by category',()=>{
 test('Shop offers, crate counter, and preparation controls stay in their own panels',()=>{
  app.ui.open('shop');assert(!document.querySelector('#roster-filter')&&document.querySelectorAll('#panel-content [data-hq="offer"]').length===2);app.ui.close();
  app.ui.open('crates');assert(document.querySelectorAll('#panel-content [data-hq="buy"]').length===2);app.ui.close();
- app.prepare();assert(app.kind==='prep'&&getComputedStyle(document.querySelector('.hq-nav')).display==='none');
+ app.prepare();assert(!document.querySelector('#prep-overlay').hidden);app.update(.1);assert(app.kind==='prep'&&document.querySelector('#prep-overlay').hidden&&getComputedStyle(document.querySelector('.hq-nav')).display==='none');
  app.ui.open('maps');assert(document.querySelectorAll('#panel-content [data-hq="map"]').length===MAPS.length&&!document.querySelector('#panel-content [data-hq="slot"]'));app.ui.close();
  app.ui.open('inventory');assert(document.querySelectorAll('.inventory-cards [data-hq="tower"]').length===3);app.ui.close();
  app.ui.open('shop');assert(!app.ui.isOpen);app.go('hq');
@@ -77,7 +86,7 @@ test('Desktop look starts on right button and movement pad follows touch capabil
  const s=app.active,capture=canvas.setPointerCapture;canvas.setPointerCapture=()=>{};const pointer=(button,x)=>({button,pointerType:'mouse',pointerId:9,target:canvas,clientX:x,clientY:100,preventDefault:()=>{}});s.input.down(pointer(0,100));assert(!s.input.look);s.input.down(pointer(2,100));assert(s.input.look?.id===9);const yaw=s.pose.yaw;s.input.move(pointer(2,140));assert(Math.abs((s.pose.yaw-yaw)+40*.004*app.lookSensitivity)<1e-8);s.input.release({pointerId:9});canvas.setPointerCapture=capture;const coarse=matchMedia('(hover:none) and (pointer:coarse)').matches;assert((getComputedStyle(document.querySelector('#walk-pad')).display==='grid')===coarse);
 });
 test('Empty loadouts block deploy; map and loadout lock at deployment',()=>{
- app.prepare();store.unequip(0);store.unequip(1);store.unequip(2);app.deploy();assert(!app.deploying);store.equip('prism-sentry',0);app.selectMap('frostline');app.deploy();assert(Object.isFrozen(app.mission)&&Object.isFrozen(app.mission.loadout));app.update(.1);assert(app.kind==='battle'&&app.active.battle.path===MAPS[1].path);
+ app.prepare();app.update(.1);store.unequip(0);store.unequip(1);store.unequip(2);app.deploy();assert(!app.deploying);store.equip('prism-sentry',0);app.selectMap('frostline');app.deploy();assert(Object.isFrozen(app.mission)&&Object.isFrozen(app.mission.loadout));app.update(.1);assert(app.kind==='battle'&&app.active.battle.path===MAPS[1].path);
 });
 test('Battle camera stays overhead, pans, zooms, and tilts at long distance',()=>{
  const s=app.active;const first=s.camera.position.clone();assert(first.y>10&&s.avatar.visible);
@@ -90,11 +99,11 @@ test('Battle camera stays overhead, pans, zooms, and tilts at long distance',()=
  s.look(0,.15);assert(s.firstPitch<0);s.toggleView();assert(s.avatar.visible);
 });
 test('Mission result pays exactly once and a terminal restart resets without duplicate rewards',()=>{
- const b=app.active.battle;app.active.chooseTower('prism-sentry');app.active.x=-11;app.active.z=0;app.active.hasPoint=true;app.active.click();for(let i=0;i<100000&&!app.active.terminal;i++){if(b.state==='PREP')app.active.start();app.active.update(1/60);}assert(app.active.terminal);const n=store.data.coins;app.active.update(1);app.active.render(renderer,1);assert(store.data.coins===n);app.active.restart();assert(app.active.battle.state==='PREP'&&app.active.battle.cash===200&&store.data.coins===n);
+ const b=app.active.battle;app.active.chooseTower('prism-sentry');app.active.x=-11;app.active.z=0;app.active.hasPoint=true;app.active.click();for(let i=0;i<100000&&!app.active.terminal;i++){if(b.state==='PREP')app.active.start();app.active.update(1/60);}assert(app.active.terminal);assert(!document.querySelector('#battle-result').hidden&&document.querySelector('[data-result="progress"]').textContent.includes('Wave'));const n=store.data.coins;app.active.update(1);app.active.render(renderer,1);assert(store.data.coins===n);app.active.restart();assert(app.active.battle.state==='PREP'&&app.active.battle.cash===200&&store.data.coins===n);app.active.headquarters();assert(!document.querySelector('#return-overlay').hidden);app.update(.1);assert(app.kind==='hq'&&document.querySelector('#return-overlay').hidden);
 });
 test('Repeated headquarters/prep/battle transitions release GPU resources',()=>{
  app.go('hq');app.render(renderer,1);const base={...renderer.info.memory};
- for(let i=0;i<3;i++){app.prepare();app.ui.close();app.render(renderer,1);app.deploy();app.update(.1);app.render(renderer,1);app.go('hq');app.render(renderer,1);}
+ for(let i=0;i<3;i++){app.prepare();app.update(.1);app.ui.close();app.render(renderer,1);app.deploy();app.update(.1);app.render(renderer,1);app.go('hq');app.render(renderer,1);}
  assert(renderer.info.memory.geometries===base.geometries,'Geometry leaked');assert(renderer.info.memory.textures===base.textures,'Textures leaked');
 });
 test('Portrait and desktop resizing preserve finite cameras and dialog controls',()=>{

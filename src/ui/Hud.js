@@ -10,7 +10,7 @@ export class Hud {
     this.scene=scene;
     this.nodes={
     };
-    for(const id of ['cash','health','remaining','state','place','start','restart','outcome','hint'])this.nodes[id]=document.getElementById(id);
+    for(const id of ['cash','health','remaining','state','place','start','skip','restart','outcome','hint'])this.nodes[id]=document.getElementById(id);
     this.nodes.place.querySelector('small').textContent=TOWER.cost+' cash · '+TOWER.damage+' damage · '+TOWER.range+' range';
     document.querySelector('header h1').textContent=scene.mission?.mapData?.name||'Copper Reach';
     this.root=document.querySelector('footer');
@@ -23,6 +23,9 @@ export class Hud {
     this.panelName=this.panel.querySelector('#selected-name');this.panelLevel=this.panel.querySelector('#selected-level');this.panelStats=this.panel.querySelector('#selected-stats');this.panelSpecial=this.panel.querySelector('#selected-special');this.upgradeButton=this.panel.querySelector('#tower-upgrade');this.sellButton=this.panel.querySelector('#tower-sell');
     this.viewButton=document.querySelector('#view-mode');
     this.enemyTip=document.createElement('div');this.enemyTip.id='enemy-tip';this.enemyTip.hidden=true;this.enemyTip.innerHTML='<strong></strong><span></span><div><i></i></div>';document.querySelector('#viewport').append(this.enemyTip);
+    this.result=document.querySelector('#battle-result');this.result.hidden=true;
+    this.resultAction=()=>scene.headquarters();this.result.querySelector('button').addEventListener('click',this.resultAction);
+    this.quests=document.createElement('aside');this.quests.id='battle-quests';this.quests.setAttribute('aria-label','Quest progress');document.querySelector('#viewport').append(this.quests);
     const back=document.querySelector('#return-hq');if(back)back.hidden=!scene.app;
   }
   onAction(e){
@@ -49,6 +52,7 @@ export class Hud {
     this.set('state',`Wave ${b.wave}/${b.totalWaves} · ${b.state}${preview}`);
     this.nodes.start.disabled=b.state!=='PREP'||s.intro>0;
     this.nodes.start.hidden=s.terminal;
+    this.nodes.skip.hidden=b.state!=='WAVE_ACTIVE';
     this.nodes.restart.hidden=!s.terminal;
     this.nodes.place.disabled=s.terminal||s.intro>0;
     this.nodes.place.hidden=!!s.mission;
@@ -59,6 +63,17 @@ export class Hud {
     if(s.hoveredEnemy)this.showEnemy(s.hoveredEnemy);
     this.set('outcome',b.state==='WON'?'Route secured.':b.state==='LOST'?'Base breached.':'');
     this.set('hint',s.message);
+    const p=s.app?.store.data;
+    if(p){
+      this.quests.hidden=!p.showQuests||s.terminal;
+      if(!this.quests.hidden){
+        const missions=p.daily.missions+Number(b.wavesStarted>0), kills=p.daily.kills+b.killed,waves=p.daily.waves+b.wavesStarted;
+        const title={wins:'Victories',kills:'Selected defeats',waves:'Selected waves'}[p.selectedQuest];
+        const selected=p.selectedQuest?`<p>${title}: ${Math.min({wins:1,kills:100,waves:10}[p.selectedQuest],p.selectedProgress+(p.selectedQuest==='wins'?0:p.selectedQuest==='kills'?b.killed:b.wavesStarted))} / ${{wins:1,kills:100,waves:10}[p.selectedQuest]}</p>`:'';
+        const markup=`<strong>Quests</strong><p>Daily: ${Number(missions>=1)+Number(kills>=25)+Number(waves>=3)} / 3</p><small>Deploy ${Math.min(1,missions)}/1 · Defeat ${Math.min(25,kills)}/25 · Waves ${Math.min(3,waves)}/3</small>${selected}`;
+        if(this.quests.innerHTML!==markup)this.quests.innerHTML=markup;
+      }
+    }
   }
   showEnemy(enemy,x=this.enemyX,y=this.enemyY){
     this.enemyTip.hidden=!enemy;if(!enemy)return;
@@ -67,8 +82,18 @@ export class Hud {
     this.enemyTip.querySelector('strong').textContent=enemy.name;this.enemyTip.querySelector('span').textContent=`${Math.ceil(enemy.health)} / ${enemy.maxHealth} HP${enemy.hidden?' · Hidden':''}${enemy.flying?' · Flying':''}${enemy.leadProtection>0?' · Lead':''}`;this.enemyTip.querySelector('i').style.width=100*enemy.health/enemy.maxHealth+'%';
   }
   positionTowerPanel(){}
+  showResult(result){
+    const minutes=Math.floor(result.elapsed/60),seconds=Math.floor(result.elapsed%60);
+    this.result.querySelector('h2').textContent=result.won?'Victory':'Defeat';
+    this.result.querySelector('[data-result=progress]').textContent=`Wave ${result.wave} / ${result.total}`;
+    this.result.querySelector('[data-result=time]').textContent=`${minutes}:${String(seconds).padStart(2,'0')}`;
+    this.result.querySelector('[data-result=rewards]').innerHTML=`<span><img src="assets/icons/coins.svg" alt="Coins"> +${result.coins}</span><span><img src="assets/icons/shards.svg" alt="Gems"> +${result.gems}</span><span>+${result.xp} XP</span>`;
+    this.result.hidden=false;this.result.querySelector('button').focus();
+  }
   dispose(){
     this.root.removeEventListener('click',this.onAction);
     this.enemyTip.remove();
+    this.quests.remove();
+    this.result.querySelector('button').removeEventListener('click',this.resultAction);this.result.hidden=true;
   }
 }

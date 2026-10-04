@@ -28,6 +28,8 @@ export const STATIONS = Object.freeze([
   {id:'crates',name:'SALVAGE BAY',x:-13,z:12,color:0xc99fed},
   {id:'index',name:'ARCHIVE',x:13,z:12,color:0x8ec9f1}
 ]);
-export const SKINS = Object.freeze({standard:{name:'Relay standard',color:0x74d5be},amber:{name:'Amber circuit',color:0xffb857},violet:{name:'Violet signal',color:0xc593ff}});
+export const SKINS = Object.freeze({standard:{name:'Relay standard',color:0x74d5be},amber:{name:'Amber circuit',color:0xffb857},violet:{name:'Violet signal',color:0xc593ff},copper:{name:'Copper pulse',color:0xee9d66},glacier:{name:'Glacier trim',color:0x9edaf4},moss:{name:'Moss circuit',color:0x9dcd85},sunset:{name:'Sunset signal',color:0xf4a6a8}});
+export const DAILY_SKIN_OFFERS=Object.freeze([{tower:'prism-sentry',skin:'copper'},{tower:'longwatch',skin:'glacier'},{tower:'blast-courier',skin:'moss'},{tower:'ember-keeper',skin:'sunset'}]);
+export const COSMETIC_ODDS=Object.freeze([{skin:'amber',chance:35},{skin:'violet',chance:25},{skin:'copper',chance:12},{skin:'glacier',chance:10},{skin:'moss',chance:10},{skin:'sunset',chance:8}]);
 export const ECONOMY = Object.freeze({startCoins:200,towerPrice:250,skinPrice:80,cratePrice:100,winCoins:60,lossCoins:15,playSeconds:300,playCoins:40});
 export const OPERATION=Object.freeze({count:11,bossHealth:90,bossSpeed:1.5,bossDamage:10,challengeSpeed:1.35,killCash:5,bossCash:30,deploySeconds:1.4,flyoverSeconds:2.6});

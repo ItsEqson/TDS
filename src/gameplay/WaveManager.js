@@ -34,6 +34,7 @@ export class WaveManager {
     this.killed=0;
     this.arrived=0;
     this.elapsed=0;
+    this.wavesStarted=0;
     this.nextSpawn=0;
     this.spawnPlan=this.campaign?.waves[0]?.flatMap(([name,count])=>Array(count).fill(name))||null;
     this.count=this.spawnPlan?.length||(this.mission?OPERATION.count:WAVE.count);
@@ -47,9 +48,22 @@ export class WaveManager {
   }
   start(){
     if(!this.transition(STATES.WAVE_ACTIVE))return false;
+    this.wavesStarted++;
     this.spawned=0;this.nextSpawn=0;this.elapsedWave=0;
     this.spawnPlan=this.campaign?.waves[this.wave-1]?.flatMap(([name,count])=>Array(count).fill(name))||null;
     this.count=this.spawnPlan?.length||(this.mission?OPERATION.count+Math.min(this.wave-1,8)*2:WAVE.count);
+    return true;
+  }
+  skipWave(){
+    if(this.state!==STATES.WAVE_ACTIVE)return false;
+    // Spawned enemies stay on the field; only the unspawned part of this wave is skipped.
+    this.spawned=this.count;
+    if(this.wave<this.totalWaves){
+      this.wave++;
+      this.spawned=0;this.nextSpawn=0;this.elapsedWave=0;this.wavesStarted++;
+      this.spawnPlan=this.campaign?.waves[this.wave-1]?.flatMap(([name,count])=>Array(count).fill(name))||null;
+      this.count=this.spawnPlan?.length||(this.mission?OPERATION.count+Math.min(this.wave-1,8)*2:WAVE.count);
+    }
     return true;
   }
   upgrade(id){
@@ -100,7 +114,7 @@ export class WaveManager {
     if(!resolveEnemy(e))return;
     if(arrival){
       this.arrived++;
-      this.health=Math.max(0,this.health-(e.boss?OPERATION.bossDamage:ENEMY.baseDamage));
+      this.health=Math.max(0,this.health-Math.ceil(e.health));
       if(this.health===0)this.transition(STATES.LOST);
     }
     else {
@@ -141,7 +155,7 @@ export class WaveManager {
     }
     for(let i=this.enemies.length-1;i>=0;i--)if(this.enemies[i].resolved)this.enemies.splice(i,1);
     if(this.state===STATES.WAVE_ACTIVE&&this.spawned===this.count&&this.enemies.length===0&&this.health>0){
-      if(this.wave<this.totalWaves){this.cash+=20+this.wave*12;this.wave++;this.state=STATES.PREP;this.spawned=0;this.spawnPlan=this.campaign?.waves[this.wave-1]?.flatMap(([name,count])=>Array(count).fill(name))||null;this.count=this.spawnPlan?.length||(this.mission?OPERATION.count+Math.min(this.wave-1,8)*2:WAVE.count);}
+      if(this.wave<this.totalWaves){this.cash+=20+this.wave*12;this.wave++;this.state=STATES.PREP;this.spawned=0;for(const tower of this.towers)tower.beamRemaining=0;this.spawnPlan=this.campaign?.waves[this.wave-1]?.flatMap(([name,count])=>Array(count).fill(name))||null;this.count=this.spawnPlan?.length||(this.mission?OPERATION.count+Math.min(this.wave-1,8)*2:WAVE.count);}
       else this.transition(STATES.WON);
     }
   }

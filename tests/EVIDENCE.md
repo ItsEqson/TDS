@@ -127,3 +127,9 @@ On `127.0.0.1:8013`, visually inspected overhead headquarters with ceiling beams
 # Lobby and island staging update — 2026-10-03
 
 Served with `python -m http.server 8765` and checked in the Codex in-app browser. Automated browser suites passed: headquarters 19/19, logic 12/12, roster 18/18, lifecycle 7/7. Live screenshots showed the open-air headquarters and staging island surrounded by water. The Start button had no surrounding mission box, staging had no destination side navigation, map selection listed maps only, and the preparation inventory listed owned towers with equip/clear actions but no purchases. A daily deal purchase deducted 150 coins, granted two cosmetic crates, and disabled the offer for the day. The crate counter listed only cosmetic and Golden crates. The live page console had no warnings or errors.
+# 2026-10-03 — Wave skip, quest and result flow
+
+- Fresh browser origin: logic 14/14, headquarters 20/20, lifecycle 7/7, roster 18/18.
+- Live game: staging loading screen appeared before the 3D island; battle showed 100/100 base HP and a quest overlay; Skip wave advanced the counter while contacts already on the path remained.
+- Shop and crates: four daily skin offers, original crate images, and visible cosmetic odds summing to 100% were inspected. Quest selection and the settings toggle were visible and operable.
+- Integration checks exercised terminal result visibility, reward idempotence, return loading, lobby transition, resize, and repeated resource cleanup. Final fresh lifecycle run reported no browser console errors.

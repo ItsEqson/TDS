@@ -86,6 +86,11 @@ export class BattleScene {
       this.hud.update();
     }
   }
+  skipWave(){
+    if(this.intro>0||!this.battle.skipWave())return;
+    this.message=this.terminal?'Final wave cleared.':`Wave ${this.battle.wave} started. Enemies already on the path remain.`;
+    this.hud.update();
+  }
   upgrade(){
     if(!this.selected)return;
     if(this.battle.upgrade(this.selected.id)){
@@ -189,7 +194,8 @@ export class BattleScene {
         const model=createTowerMesh(false,result.tower.definition),beam=createBeam();
         model.scale.setScalar(1.35);
 
-        if(this.mission&&this.mission.skin!=='standard')model.traverse(o=>{if(o.material?.name==='uniform')o.material.color.setHex(SKINS[this.mission.skin].color);});
+        const skin=this.mission?.towerSkins?.[this.towerId]||this.mission?.skin;
+        if(skin&&skin!=='standard')model.traverse(o=>{if(o.material?.name==='uniform')o.material.color.setHex(SKINS[skin].color);});
         model.position.set(result.tower.x,0,result.tower.z);
         model.userData.towerId=result.tower.id;
         this.scene.add(model,beam);
@@ -254,7 +260,15 @@ export class BattleScene {
       this.ghost.visible=false;
       this.range.visible=false;
       this.message=this.battle.state==='WON'?'Route secured. Press R or Restart to play again.':'Base breached. Press R or Restart to try a defense.';
-      if(this.app&&!this.rewarded){this.rewarded=true;const reward=this.app.store.complete(this.battle,this.mission);this.message+=` ${reward?`+${reward} account coins. `:''}Experience and mode rewards added to your profile.`;}
+      if(this.app&&!this.rewarded){
+        this.rewarded=true;
+        const before={...this.app.store.data};
+        this.app.store.complete(this.battle,this.mission);
+        const coinGain=this.app.store.data.coins-before.coins,gemGain=this.app.store.data.shards-before.shards;
+        if(coinGain)this.app.ui.showCurrencyReward('coins',coinGain);
+        else if(gemGain)this.app.ui.showCurrencyReward('gems',gemGain);
+        this.hud.showResult({won:this.battle.state==='WON',wave:this.battle.wave,total:this.battle.totalWaves,elapsed:this.battle.elapsed,coins:this.app.store.data.coins-before.coins,gems:this.app.store.data.shards-before.shards,xp:this.app.store.data.xp-before.xp});
+      }
     }
     this.hud.update();
   }
@@ -292,7 +306,7 @@ export class BattleScene {
         beam,model
       }
       =this.towerMeshes.get(t.id);
-      const firing=t.beamRemaining>0&&!this.terminal;
+      const firing=t.beamRemaining>0&&this.battle.state==='WAVE_ACTIVE';
       model.rotation.x=firing?-.09*Math.min(1,t.beamRemaining/.12):0;
       model.position.y=firing?-.045*Math.sin(this.motionTime*30):0;
       beam.visible=firing;
@@ -306,7 +320,8 @@ export class BattleScene {
     }
     for(const a of this.battle.allies){let m=this.allyMeshes.get(a.id);if(!m){m=createTowerMesh(false,TOWERS[a.towerId]);m.scale.setScalar(.65);this.scene.add(m);this.allyMeshes.set(a.id,m);}m.position.set(a.x,0,a.z);if(a.x!==a.previousX||a.z!==a.previousZ)m.rotation.y=Math.atan2(a.x-a.previousX,a.z-a.previousZ);}
     for(const [id,m] of this.allyMeshes)if(!this.battle.allies.some(a=>a.id===id)){disposeObject(m);this.allyMeshes.delete(id);}
-    for(const t of this.battle.towers)if(t.shotId)this.towerMeshes.get(t.id).model.rotation.y=Math.atan2(t.targetX-t.x,t.targetZ-t.z);
+    if(this.battle.state==='WAVE_ACTIVE')for(const t of this.battle.towers)if(t.shotId)this.towerMeshes.get(t.id).model.rotation.y=Math.atan2(t.targetX-t.x,t.targetZ-t.z);
+    else for(const {model,beam} of this.towerMeshes.values()){model.rotation.y=0;beam.visible=false;}
     renderer.render(this.scene,this.camera);
     this.hud?.positionTowerPanel();
   }
@@ -335,7 +350,7 @@ export class BattleScene {
     this.camera.lookAt(this.walkX,0,this.walkZ);
   }
   chooseTower(id){if(!this.mission?.loadout.includes(id))return;this.towerId=id;this.place();}
-  headquarters(){this.app?.go('hq');}
+  headquarters(){this.app?.returnToHeadquarters();}
   exit(){
     this.input.dispose();
     this.hud.dispose();

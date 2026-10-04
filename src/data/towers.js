@@ -287,7 +287,7 @@ const roster=[
     "currency": "coins",
     "color": 9743871,
     "appearance": 16,
-    "description": "Field Mender is a human base healing specialist. Restores 1 base health every 5 seconds, up to 10."
+    "description": "Field Mender is a human base healing specialist. Restores base health up to 100."
   },
   {
     "id": "supply-grower",
