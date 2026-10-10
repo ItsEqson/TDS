@@ -22,6 +22,7 @@ export class Hud {
     this.panel.innerHTML='<strong id="selected-name"></strong><span id="selected-level"></span><span id="selected-stats"></span><span id="selected-special"></span><button data-action="upgrade" id="tower-upgrade"></button><button data-action="sell" id="tower-sell"></button>';
     this.panelName=this.panel.querySelector('#selected-name');this.panelLevel=this.panel.querySelector('#selected-level');this.panelStats=this.panel.querySelector('#selected-stats');this.panelSpecial=this.panel.querySelector('#selected-special');this.upgradeButton=this.panel.querySelector('#tower-upgrade');this.sellButton=this.panel.querySelector('#tower-sell');
     this.viewButton=document.querySelector('#view-mode');
+    this.voteMenu=document.querySelector('#skip-vote');this.voteTimer=document.querySelector('#skip-vote-timer');
     this.enemyTip=document.createElement('div');this.enemyTip.id='enemy-tip';this.enemyTip.hidden=true;this.enemyTip.innerHTML='<strong></strong><span></span><div><i></i></div>';document.querySelector('#viewport').append(this.enemyTip);
     this.result=document.querySelector('#battle-result');this.result.hidden=true;
     this.resultAction=()=>scene.headquarters();this.result.querySelector('button').addEventListener('click',this.resultAction);
@@ -49,10 +50,12 @@ export class Hud {
     this.set('remaining',String(b.remaining));
     const groups=MODE_CAMPAIGNS[s.mission?.mode]?.waves[b.wave-1];
     const preview=b.state==='PREP'&&groups?' · Incoming: '+groups.slice(0,3).map(([name,count])=>`${count} ${name}`).join(', ')+(groups.length>3?` +${groups.length-3} groups`:''):'';
-    this.set('state',`Wave ${b.wave}/${b.totalWaves} · ${b.state}${preview}`);
+    const timer=b.state==='INTERMISSION'?` · Next wave in ${b.intermissionRemaining.toFixed(1)}s`:b.state==='WAVE_ACTIVE'?(Number.isFinite(b.waveDurationSeconds)?` · ${Math.ceil(Math.max(0,b.waveDurationSeconds-b.elapsedWave))}s left`:' · Boss wave · no timer'):'';
+    this.set('state',`Wave ${b.wave}/${b.totalWaves} · ${b.state}${timer}${preview}`);
     this.nodes.start.disabled=b.state!=='PREP'||s.intro>0;
     this.nodes.start.hidden=s.terminal;
-    this.nodes.skip.hidden=b.state!=='WAVE_ACTIVE';
+    this.voteMenu.hidden=!b.skipVoteOpen||b.skipVotes.has(1);
+    if(!this.voteMenu.hidden)this.voteTimer.textContent=`Skip vote · ${Math.ceil(b.skipAtSeconds+WAVE.skipVoteSeconds-b.elapsedWave)}s`;
     this.nodes.restart.hidden=!s.terminal;
     this.nodes.place.disabled=s.terminal||s.intro>0;
     this.nodes.place.hidden=!!s.mission;

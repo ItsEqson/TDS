@@ -109,8 +109,8 @@ export class SaveStore {
     const weekday=new Date().getUTCDay(),xpBoost=weekday===0||weekday>=5?2:1;
     const experience=won?(rewards?.xp??50):Math.max(10,Math.round((rewards?.xp||0)*progress*.35));
     p.shards+=gems;p.missions++;p.kills+=battle.killed;p.coins+=reward;p.xp+=experience*xpBoost;
-    p.daily.missions++;p.daily.kills+=battle.killed;p.daily.waves+=battle.wavesStarted;p.weekly.kills+=battle.killed;if(won&&battle.health===100)p.flawless++;
-    if(!p.selectedClaimed)p.selectedProgress+=p.selectedQuest==='wins'?Number(won):p.selectedQuest==='kills'?battle.killed:p.selectedQuest==='waves'?battle.wavesStarted:0;
+    p.daily.missions++;p.daily.kills+=battle.killed;p.daily.waves+=Number(battle.wavesStarted)||0;p.weekly.kills+=battle.killed;if(won&&battle.health===100)p.flawless++;
+    if(!p.selectedClaimed)p.selectedProgress+=p.selectedQuest==='wins'?Number(won):p.selectedQuest==='kills'?battle.killed:p.selectedQuest==='waves'?(Number(battle.wavesStarted)||0):0;
     for(const id of new Set(battle.towers.map(t=>baseTower(t.definition.id))))p.mastery[id]=(p.mastery[id]||0)+(won?(rewards?.towerXp??25):5);
     if(won){p.wins++;if(!p.clearedModes.includes(mission.mode))p.clearedModes.push(mission.mode);const old=p.records[mission.map];p.records[mission.map]={wins:(old?.wins||0)+1,best:Math.min(old?.best||Infinity,battle.elapsed)};}
     return reward;

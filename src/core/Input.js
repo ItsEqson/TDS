@@ -1,6 +1,6 @@
 import { WALK } from '../data/headquarters.js';
 export const INPUT_MAP=Object.freeze({
-  cancel:'Escape',start:'Space',skip:'KeyK',restart:'KeyR',view:'KeyV',place:0,cancelPointer:2,interact:'KeyE',
+  cancel:'Escape',start:'Space',skip:'KeyK',keep:'KeyN',restart:'KeyR',view:'KeyV',place:0,cancelPointer:2,interact:'KeyE',
   walk:Object.freeze({forward:['KeyW'],back:['KeyS'],left:['KeyA'],right:['KeyD'],turnLeft:['ArrowLeft'],turnRight:['ArrowRight'],lookUp:['ArrowUp'],lookDown:['ArrowDown']})
 });
 export class Input {
@@ -63,7 +63,8 @@ export class Input {
     let action=null;
     if(e.code===INPUT_MAP.cancel&&this.scene.canCancel())action='cancel';
     if(e.code===INPUT_MAP.start&&this.scene.battle.state==='PREP')action='start';
-    if(e.code===INPUT_MAP.skip&&this.scene.battle.state==='WAVE_ACTIVE')action='skipWave';
+    if(e.code===INPUT_MAP.skip&&this.scene.battle.skipVoteOpen&&!this.scene.battle.skipVotes.has(1))action='skipWave';
+    if(e.code===INPUT_MAP.keep&&this.scene.battle.skipVoteOpen&&!this.scene.battle.skipVotes.has(1))action='voteNo';
     if(e.code===INPUT_MAP.restart&&this.scene.terminal)action='restart';
     if(action){
       e.preventDefault();

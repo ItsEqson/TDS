@@ -4,7 +4,7 @@ import { createEnemy,moveEnemy,resolveEnemy } from '../src/gameplay/Enemy.js';
 import { selectTarget } from '../src/gameplay/Targeting.js';
 import { WAYPOINTS,SEGMENTS,PATH_LENGTH } from '../src/data/arena.js';
 import { ENEMY } from '../src/data/enemies.js';
-import { TIMING } from '../src/data/waves.js';
+import { TIMING,WAVE,waveBonus,waveClearBonus } from '../src/data/waves.js';
 import { Game } from '../src/core/Game.js';
 const checks=[];
 function assert(value,message='Assertion failed'){
@@ -97,13 +97,38 @@ test('Wave spawns exactly ten at the configured fixed interval',()=>{
   }
   assert(b.spawned===10);
 });
-test('Skipping launches the next wave while spawned enemies remain',()=>{
-  const mission={mode:'beginner',path:WAYPOINTS,loadout:['prism-sentry']},b=new WaveManager(mission);
+test('Skip vote opens on schedule, preserves spawned enemies, and waits five seconds',()=>{
+  const mission={mode:'beginner',path:WAYPOINTS,loadout:['prism-sentry'],waveDurationSeconds:3},b=new WaveManager(mission);
   assert(!b.skipWave());b.start();b.update(1/60);
-  const old=b.enemies[0],id=old.id;
-  assert(b.skipWave()&&b.wave===2&&b.state==='WAVE_ACTIVE'&&b.enemies.includes(old)&&b.wavesStarted===2);
-  b.update(1/60);
-  assert(b.enemies.some(e=>e.id===id)&&b.enemies.some(e=>e.id!==id));
+  const old=b.enemies[0];assert(!b.skipWave());
+  for(let i=0;i<60;i++)b.update(1/60);
+  assert(b.skipVoteOpen&&b.skipWave()&&b.state==='INTERMISSION'&&b.wave===1&&b.enemies.includes(old));
+  assert(b.intermissionRemaining===5&&b.wavesStarted===1);
+  for(let i=0;i<299;i++)b.update(1/60);
+  assert(b.state==='INTERMISSION');b.update(1/60);
+  assert(b.state==='WAVE_ACTIVE'&&b.wave===2&&b.wavesStarted===2);
+});
+test('Wave timer ends the wave with enemies still alive; voting no keeps it running',()=>{
+  const b=new WaveManager({mode:'beginner',path:WAYPOINTS,loadout:['prism-sentry'],waveDurationSeconds:2});b.start();b.update(1/60);
+  b.elapsedWave=b.skipAtSeconds;assert(b.voteSkip(false)&&b.state==='WAVE_ACTIVE'&&!b.voteSkip(true));
+  for(let i=0;i<130&&b.state==='WAVE_ACTIVE';i++)b.update(1/60);
+  assert(b.state==='INTERMISSION'&&b.lastWaveEnd.reason==='timer'&&b.enemies.length>0);
+});
+test('Skip timing policies and boss wave rules are data driven',()=>{
+  assert(new WaveManager({mode:'easy',waveDurationSeconds:180}).skipAtSeconds===60);
+  assert(new WaveManager({mode:'hardcore'}).skipAtSeconds===20);
+  assert(new WaveManager({mode:'easy',skipPolicy:'never'}).skipAtSeconds===Infinity);
+  const boss=new WaveManager({mode:'easy'});boss.wave=boss.totalWaves;boss.start();
+  assert(boss.bossWave&&boss.waveDurationSeconds===Infinity&&boss.skipAtSeconds===Infinity&&!boss.skipWave());
+});
+test('Clear bonus pays once after every spawned enemy dies and scales by players',()=>{
+  assert(waveBonus(1)===32&&waveClearBonus(1,'easy',1)===8&&waveClearBonus(1,'easy',4)===3);
+  assert(waveClearBonus(1,'hardcore',1)===0&&waveClearBonus(1,'voidcore',1)===0);
+  const b=new WaveManager({mode:'beginner',path:WAYPOINTS,loadout:['prism-sentry']});b.start();b.update(1/60);
+  const old=b.enemies[0];b.endWave('timer');const base=b.cash;
+  b.resolve(old,false);assert(b.cash===base+5+waveClearBonus(1,'beginner',1));
+  b.resolve(old,false);assert(b.cash===base+5+waveClearBonus(1,'beginner',1));
+  const breached=new WaveManager({mode:'beginner',path:WAYPOINTS,loadout:['prism-sentry']});breached.start();breached.update(1/60);const contact=breached.enemies[0];breached.endWave('timer');breached.resolve(contact,true);assert(breached.lastClearBonus===null);
 });
 test('Breach removes remaining enemy health from the 100 HP base',()=>{
   const b=new WaveManager(),enemy=createEnemy(1);enemy.health=7.4;

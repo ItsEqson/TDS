@@ -18,6 +18,7 @@ export class BattleScene {
     this.canvas=canvas;
     this.app=app;this.mission=mission;this.towerId=mission?.loadout.find(Boolean)||'prism-sentry';this.rewarded=false;this.intro=mission&&!app?.reducedMotion?OPERATION.flyoverSeconds:0;
     this.battle=new WaveManager(mission);
+    this.seenWaveEnd=0;this.seenClearBonus=0;
     this.placing=false;
     this.selected=null;
     this.message='Place a defender near the inner bend, then start the wave.';
@@ -88,9 +89,10 @@ export class BattleScene {
   }
   skipWave(){
     if(this.intro>0||!this.battle.skipWave())return;
-    this.message=this.terminal?'Final wave cleared.':`Wave ${this.battle.wave} started. Enemies already on the path remain.`;
+    this.message=this.battle.state==='INTERMISSION'?`Skip vote passed. Wave ${this.battle.wave+1} begins after the intermission; existing enemies remain.`:'Skip vote recorded.';
     this.hud.update();
   }
+  voteNo(){if(this.battle.voteSkip(false)){this.message='You voted to continue this wave.';this.hud.update();}}
   upgrade(){
     if(!this.selected)return;
     if(this.battle.upgrade(this.selected.id)){
@@ -254,7 +256,11 @@ export class BattleScene {
     if(this.intro>0){this.intro=Math.max(0,this.intro-dt);this.message='Deployment flyover · tracing the approach to the relay';if(!this.intro)this.message=`Commander: Ground swarm inbound. Stop the ${FINAL_BOSSES[this.mission?.mode]||'final threat'} before it reaches the relay.`;this.hud.update();return;}
     const before=this.battle.state;
     this.battle.update(dt);
-    if(before==='WAVE_ACTIVE'&&this.battle.state==='PREP')this.message=`Wave ${this.battle.wave-1} cleared. +${20+(this.battle.wave-1)*12} cash. Prepare for wave ${this.battle.wave}.`;
+    const end=this.battle.lastWaveEnd;
+    if(end&&end.wave!==this.seenWaveEnd){this.seenWaveEnd=end.wave;this.message=`Wave ${end.wave} ended (${end.reason}). +${end.bonus} wave cash. ${this.battle.wave<this.battle.totalWaves?'Next wave in 5 seconds.':''}`;}
+    const clear=this.battle.lastClearBonus;
+    if(clear&&clear.wave!==this.seenClearBonus){this.seenClearBonus=clear.wave;this.message=`Wave ${clear.wave} fully cleared. +${clear.amount} clear bonus.`;}
+    if(before==='INTERMISSION'&&this.battle.state==='WAVE_ACTIVE')this.message=`Wave ${this.battle.wave} active. Enemies from earlier waves remain on the path.`;
     if(before!==this.battle.state&&this.terminal){
       this.placing=false;
       this.ghost.visible=false;
@@ -306,7 +312,7 @@ export class BattleScene {
         beam,model
       }
       =this.towerMeshes.get(t.id);
-      const firing=t.beamRemaining>0&&this.battle.state==='WAVE_ACTIVE';
+      const firing=t.beamRemaining>0&&['WAVE_ACTIVE','INTERMISSION'].includes(this.battle.state);
       model.rotation.x=firing?-.09*Math.min(1,t.beamRemaining/.12):0;
       model.position.y=firing?-.045*Math.sin(this.motionTime*30):0;
       beam.visible=firing;
@@ -320,8 +326,9 @@ export class BattleScene {
     }
     for(const a of this.battle.allies){let m=this.allyMeshes.get(a.id);if(!m){m=createTowerMesh(false,TOWERS[a.towerId]);m.scale.setScalar(.65);this.scene.add(m);this.allyMeshes.set(a.id,m);}m.position.set(a.x,0,a.z);if(a.x!==a.previousX||a.z!==a.previousZ)m.rotation.y=Math.atan2(a.x-a.previousX,a.z-a.previousZ);}
     for(const [id,m] of this.allyMeshes)if(!this.battle.allies.some(a=>a.id===id)){disposeObject(m);this.allyMeshes.delete(id);}
-    if(this.battle.state==='WAVE_ACTIVE')for(const t of this.battle.towers)if(t.shotId)this.towerMeshes.get(t.id).model.rotation.y=Math.atan2(t.targetX-t.x,t.targetZ-t.z);
-    else for(const {model,beam} of this.towerMeshes.values()){model.rotation.y=0;beam.visible=false;}
+    if(['WAVE_ACTIVE','INTERMISSION'].includes(this.battle.state)&&this.battle.enemies.length){
+      for(const t of this.battle.towers)if(t.shotId)this.towerMeshes.get(t.id).model.rotation.y=Math.atan2(t.targetX-t.x,t.targetZ-t.z);
+    }else for(const {model,beam} of this.towerMeshes.values()){model.rotation.y=0;beam.visible=false;}
     renderer.render(this.scene,this.camera);
     this.hud?.positionTowerPanel();
   }

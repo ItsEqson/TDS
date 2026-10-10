@@ -88,6 +88,16 @@ test('Desktop look starts on right button and movement pad follows touch capabil
 test('Empty loadouts block deploy; map and loadout lock at deployment',()=>{
  app.prepare();app.update(.1);store.unequip(0);store.unequip(1);store.unequip(2);app.deploy();assert(!app.deploying);store.equip('prism-sentry',0);app.selectMap('frostline');app.deploy();assert(Object.isFrozen(app.mission)&&Object.isFrozen(app.mission.loadout));app.update(.1);assert(app.kind==='battle'&&app.active.battle.path===MAPS[1].path);
 });
+test('Battle skip vote appears after its delay and retains enemies through intermission',()=>{
+ const scene=app.active,b=scene.battle,menu=document.querySelector('#skip-vote');
+ scene.intro=0;scene.start();scene.update(1/60);
+ assert(b.enemies.length>0&&menu.hidden,'Vote opened before its delay');
+ b.elapsedWave=b.skipAtSeconds;scene.hud.update();assert(!menu.hidden,'Vote did not open');
+ document.querySelector('#skip').click();assert(b.state==='INTERMISSION'&&menu.hidden&&b.enemies.length>0,'Skip did not retain active enemies');
+ for(let i=0;i<300;i++)b.update(1/60);
+ assert(b.wave===2&&b.state==='WAVE_ACTIVE','Next wave did not begin after five seconds');
+ app.go('battle');
+});
 test('Battle camera stays overhead, pans, zooms, and tilts at long distance',()=>{
  const s=app.active;const first=s.camera.position.clone();assert(first.y>10&&s.avatar.visible);
  s.zoomBy(18);assert(s.camera.position.distanceTo(first)>10);
@@ -99,7 +109,7 @@ test('Battle camera stays overhead, pans, zooms, and tilts at long distance',()=
  s.look(0,.15);assert(s.firstPitch<0);s.toggleView();assert(s.avatar.visible);
 });
 test('Mission result pays exactly once and a terminal restart resets without duplicate rewards',()=>{
- const b=app.active.battle;app.active.chooseTower('prism-sentry');app.active.x=-11;app.active.z=0;app.active.hasPoint=true;app.active.click();for(let i=0;i<100000&&!app.active.terminal;i++){if(b.state==='PREP')app.active.start();app.active.update(1/60);}assert(app.active.terminal);assert(!document.querySelector('#battle-result').hidden&&document.querySelector('[data-result="progress"]').textContent.includes('Wave'));const n=store.data.coins;app.active.update(1);app.active.render(renderer,1);assert(store.data.coins===n);app.active.restart();assert(app.active.battle.state==='PREP'&&app.active.battle.cash===200&&store.data.coins===n);app.active.headquarters();assert(!document.querySelector('#return-overlay').hidden);app.update(.1);assert(app.kind==='hq'&&document.querySelector('#return-overlay').hidden);
+ const b=app.active.battle;app.active.chooseTower('prism-sentry');app.active.x=-11;app.active.z=0;app.active.hasPoint=true;app.active.click();for(let i=0;i<100000&&!app.active.terminal;i++){if(b.state==='PREP')app.active.start();app.active.update(1/60);}assert(app.active.terminal);assert(!document.querySelector('#battle-result').hidden&&document.querySelector('[data-result="progress"]').textContent.includes('Wave'));const n=store.data.coins;app.active.update(1);app.active.render(renderer,1);assert(store.data.coins===n);for(const {model,beam} of app.active.towerMeshes.values())assert(model.rotation.x===0&&model.rotation.y===0&&!beam.visible,'Tower firing pose remained after battle');app.active.restart();assert(app.active.battle.state==='PREP'&&app.active.battle.cash===200&&store.data.coins===n);app.active.headquarters();assert(!document.querySelector('#return-overlay').hidden);app.update(.1);assert(app.kind==='hq'&&document.querySelector('#return-overlay').hidden);
 });
 test('Repeated headquarters/prep/battle transitions release GPU resources',()=>{
  app.go('hq');app.render(renderer,1);const base={...renderer.info.memory};

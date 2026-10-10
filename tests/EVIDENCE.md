@@ -133,3 +133,10 @@ Served with `python -m http.server 8765` and checked in the Codex in-app browser
 - Live game: staging loading screen appeared before the 3D island; battle showed 100/100 base HP and a quest overlay; Skip wave advanced the counter while contacts already on the path remained.
 - Shop and crates: four daily skin offers, original crate images, and visible cosmetic odds summing to 100% were inspected. Quest selection and the settings toggle were visible and operable.
 - Integration checks exercised terminal result visibility, reward idempotence, return loading, lobby transition, resize, and repeated resource cleanup. Final fresh lifecycle run reported no browser console errors.
+
+# 2026-10-09 — Wave timing and skip votes
+
+- Served the static game at `127.0.0.1:8773`. Browser suites passed: logic 17/17, roster 18/18, headquarters 21/21, lifecycle 7/7.
+- The live Easy battle showed the 100 HP base, first-wave preview, then a 90-second wave countdown. The integration browser check opened the vote only after its delay, clicked Vote skip, verified enemies remained during the five-second intermission, and confirmed wave 2 began afterward.
+- Simulation checks covered natural clears, timer endings, yes/no votes, one-third/20-second/never skip schedules, unskippable final boss waves, delayed clear rewards by player count, no Hardcore/Voidcore clear reward, and breach disqualification. Integration checks confirmed terminal tower beams and firing pose clear, reward payment remains once-only, restart and scene transitions release GPU resources, and portrait/desktop resizing keeps cameras valid.
+- The final browser integration origin reported no console errors. Full campaign balance and native Firefox/Edge remain unverified.

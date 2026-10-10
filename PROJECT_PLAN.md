@@ -1,8 +1,12 @@
 # Project Plan — Original Fully 3D Browser Tower Defense
 
-## Active Work — Wave Skip, Quest Tracking, and Mission Results (2026-10-03)
+## Active Work — Wave Timing and Skip Votes (2026-10-09)
 
-The latest request adds a skip control during active waves. It stops only the remaining spawns from that wave and immediately launches the next while already spawned enemies continue along the path. Tower beams and recoil reset at wave end. The base starts at 100 HP and loses the breaching enemy's remaining HP. Three daily quests and one selected quest track battles with saved rewards; their battle overlay can be disabled in Settings. The shop displays original crate images, six explicit cosmetic odds, and four daily tower skin offers priced at 120 coins each. Currency icons and reward popups accompany account currency awards. Mission victory/defeat results show progress, elapsed time, and rewards, with loading screens for staging and the return to the 3D lobby.
+Waves now end when all scheduled enemies are eliminated, their timer expires, or a skip vote passes. A five-second intermission precedes the next wave in every case; enemies already on the path remain active. The skip vote opens after one third of the 90-second timer in Survival, after 20 seconds in Hardcore and Voidcore, and is unavailable on final boss waves, which have no time limit. The rules also support a never-open policy. A completed wave pays its normal cash bonus at wave end, plus a once-only clear bonus after every enemy from that wave dies without breaching. The clear bonus is 25%, 20%, 15%, or 10% of the wave bonus for one through four players, and is disabled in Hardcore and Voidcore. Browser checks: 17/17 logic, 21/21 headquarters, 7/7 lifecycle, and 18/18 roster.
+
+## Previous Work — Wave Skip, Quest Tracking, and Mission Results (2026-10-03)
+
+The earlier request added skip controls, which the current wave timing work replaces with a delayed vote and intermission. Tower beams and recoil reset when firing stops. The base starts at 100 HP and loses the breaching enemy's remaining HP. Three daily quests and one selected quest track battles with saved rewards; their battle overlay can be disabled in Settings. The shop displays original crate images, six explicit cosmetic odds, and four daily tower skin offers priced at 120 coins each. Currency icons and reward popups accompany account currency awards. Mission victory/defeat results show progress, elapsed time, and rewards, with loading screens for staging and the return to the 3D lobby.
 
 Browser checks: 14/14 logic, 20/20 headquarters, 7/7 lifecycle, and 18/18 roster. Live inspection covered the staging loading screen, quest board, skin shop and crate odds, active wave skip, and battle quest overlay. The browser console had no errors on the final fresh lifecycle run. Full 20–50 wave balance and native Firefox/Edge remain open.
 

@@ -53,13 +53,15 @@ await test('Five upgrades improve live stats; selling returns 60% once',()=>{
  const b=new WaveManager();b.cash=5000;const placed=b.place(-13,0);assert(placed.ok);const t=placed.tower,base=towerStats(t);for(let i=0;i<5;i++){const cost=upgradeCost(t),cash=b.cash;assert(b.upgrade(t.id));assert(b.cash===cash-cost);}assert(t.level===5&&towerStats(t).damage>base.damage&&towerStats(t).range>base.range&&towerStats(t).intervalSeconds<base.intervalSeconds);assert(upgradeCost(t)===null&&!b.upgrade(t.id));const refund=Math.floor(t.invested*.6),cash=b.cash;assert(b.sell(t.id)===refund&&b.cash===cash+refund);assert(b.sell(t.id)===null);
 });
 await test('Survival waves increase contacts and enemy health',()=>{
- const mission={path:MAPS[0].path,map:MAPS[0].id,mode:'beginner',loadout:['prism-sentry']},b=new WaveManager(mission);b.health=1000;b.start();b.update(1/60);const first=b.enemies[0].maxHealth,count=b.count;for(let i=0;i<10000&&b.state==='WAVE_ACTIVE';i++)b.update(1/60);assert(b.state==='PREP'&&b.wave===2);b.start();b.update(1/60);assert(b.count>count&&b.enemies[0].maxHealth>first);
+ const mission={path:MAPS[0].path,map:MAPS[0].id,mode:'beginner',loadout:['prism-sentry']},b=new WaveManager(mission);b.health=1000;b.start();b.update(1/60);const first=b.enemies[0].maxHealth,count=b.count;for(let i=0;i<10000&&b.wave===1;i++)b.update(1/60);assert(b.state==='WAVE_ACTIVE'&&b.wave===2);b.update(1/60);assert(b.count>count&&b.enemies.some(e=>e.wave===2&&e.maxHealth>first));
 });
 await test('Beginner can be won with two Scouts and affordable upgrades',()=>{
  const b=new WaveManager({path:MAPS[0].path,map:MAPS[0].id,mode:'beginner',loadout:['prism-sentry']});
  assert(b.place(-13,0).ok&&b.place(-1,0).ok);
+ let upgraded=0;
  for(let i=0;i<100000&&!['WON','LOST'].includes(b.state);i++){
-   if(b.state==='PREP'){for(const t of b.towers)b.upgrade(t.id);b.start();}
+   if(b.state==='PREP')b.start();
+   if(b.state==='INTERMISSION'&&upgraded!==b.wave){for(const t of b.towers)b.upgrade(t.id);upgraded=b.wave;}
    b.update(1/60);
  }
  assert(b.state==='WON','Outcome '+b.state+' on wave '+b.wave+' with '+b.health+' health');
